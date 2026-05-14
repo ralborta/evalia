@@ -1,3 +1,4 @@
+import { getAppBaseUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +27,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
   });
   if (!interview) notFound();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppBaseUrl();
   const publicLink = `${appUrl}/interview/${interview.publicToken}`;
 
   return (

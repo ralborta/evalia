@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
 import { generatePublicToken } from "@/lib/tokens";
 import { NextResponse } from "next/server";
@@ -128,7 +129,7 @@ export async function POST(req: Request) {
     },
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppBaseUrl();
   return NextResponse.json({
     interview,
     publicUrl: `${appUrl}/interview/${interview.publicToken}`,
