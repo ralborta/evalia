@@ -8,15 +8,19 @@ const SEED_TOKEN_COMPLETED = "seed00000000000000000001completed";
 const SEED_TOKEN_AGENT = "seed00000000000000000002agentlnk";
 
 async function main() {
-  const password = await bcrypt.hash("demo12345", 10);
+  const passwordDemo = await bcrypt.hash("demo12345", 10);
+  const passwordAdmin = await bcrypt.hash("admin", 10);
 
   await prisma.user.upsert({
     where: { email: "admin@evalia.app" },
-    update: {},
+    update: {
+      password: passwordAdmin,
+      role: UserRole.ADMIN,
+    },
     create: {
       email: "admin@evalia.app",
       name: "Admin EvalIA",
-      password,
+      password: passwordAdmin,
       role: UserRole.ADMIN,
     },
   });
@@ -27,7 +31,7 @@ async function main() {
     create: {
       email: "evaluador@evalia.app",
       name: "Ana López",
-      password,
+      password: passwordDemo,
       role: UserRole.EVALUATOR,
     },
   });
@@ -38,7 +42,7 @@ async function main() {
     create: {
       email: "agente@evalia.app",
       name: "Juan Pérez",
-      password,
+      password: passwordDemo,
       role: UserRole.AGENT,
     },
   });
@@ -181,7 +185,8 @@ async function main() {
   });
 
   console.log("Seed OK");
-  console.log("Usuarios: admin@evalia.app | evaluador@evalia.app | agente@evalia.app — contraseña: demo12345");
+  console.log("Admin: admin@evalia.app / admin");
+  console.log("Evaluador y agente: evaluador@evalia.app | agente@evalia.app — contraseña: demo12345");
   console.log("Entrevista demo completada — link:", `/interview/${SEED_TOKEN_COMPLETED}`);
   console.log("Entrevista agente (link listo) — link:", `/interview/${SEED_TOKEN_AGENT}`);
 }
