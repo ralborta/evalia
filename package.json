@@ -11,6 +11,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset-admin": "tsx prisma/reset-admin.ts",
     "db:studio": "prisma studio",
+    "db:deploy": "prisma db push && prisma db seed",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0",
+    "tsx": "^4.22.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -47,7 +49,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "tsx": "^4.22.0",
     "typescript": "^5"
   },
   "packageManager": "pnpm@9.12.0+sha512.4abf725084d7bcbafbd728bfc7bee61f2f791f977fd87542b3579dcb23504d170d46337945e4c66485cd12d588a0c0e570ed9c477e7ccdd8507cf05f3f92eaca",

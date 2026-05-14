@@ -2,38 +2,33 @@
 
 MVP de entrevistas orales en inglés (ElevenLabs) + panel evaluador/agente + informes con IA.
 
-## Despliegue (Vercel + Railway)
+## Despliegue en **Railway** (app + Postgres)
 
-1. **Railway**: servicio **PostgreSQL**; copia `DATABASE_URL`.
-2. **Vercel** (o Railway para la app): conecta el repo e importa variables desde [`.env.example`](./.env.example).
-   - Obligatorias en producción: `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_APP_URL` (todas con tu URL **https://** real, sin `/` final).
-   - Vercel inyecta `VERCEL_URL`; si no defines `NEXT_PUBLIC_APP_URL`, la app intentará usarla para links públicos.
-3. Aplica el esquema a la BD de producción (desde tu máquina con `DATABASE_URL` de Railway o en CI):
+El repo incluye [`railway.json`](./railway.json): en **cada deploy** Railway ejecuta **`pnpm run db:deploy`** (esquema Prisma + **seed** con usuarios demo, admin `admin@evalia.app` / `admin`, entrevistas de prueba, etc.) y luego arranca la app con **`pnpm start`**.
 
-```bash
-pnpm install
-pnpm exec prisma db push
-pnpm exec prisma db seed
-```
+1. Crea **PostgreSQL** en Railway y enlaza **`DATABASE_URL`** al servicio web (EvalIA).
+2. Variables obligatorias en el servicio **web**: `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_APP_URL` (URL pública `https://…` de **Railway**, sin `/` final).
+3. Haz **redeploy** (o push a `main`). No hace falta correr Prisma desde tu Mac.
 
-Si el login falla en producción pero las credenciales son correctas, la BD del deploy puede no tener usuarios. Con la misma `DATABASE_URL` que usa Railway:
-
-```bash
-pnpm db:reset-admin
-```
-
-(o `pnpm db:seed` para cargar demo completo).
+Opcional (Vercel): mismas variables con la URL de Vercel si despliegas allí; `railway.json` solo afecta a Railway.
 
 ## Desarrollo local
 
 ```bash
 pnpm install
 cp .env.example .env
-# Edita .env (Postgres local o DATABASE_URL de Railway)
+# Edita .env
 pnpm dev
 ```
 
-Abre la URL que indique el terminal (suele ser `http://localhost:3000`).
+Comandos útiles:
+
+```bash
+pnpm db:push      # solo esquema
+pnpm db:seed      # solo datos demo
+pnpm db:deploy    # push + seed (lo mismo que en Railway pre-deploy)
+pnpm db:reset-admin  # solo admin admin@evalia.app / admin
+```
 
 ## Más
 
