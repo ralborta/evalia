@@ -14,6 +14,21 @@ Además, al **arrancar** el servidor Next se ejecuta [`instrumentation.ts`](./in
 
 Opcional (Vercel): mismas variables con la URL de Vercel si despliegas allí; `railway.json` solo afecta a Railway.
 
+## Despliegue en **Vercel** (app) + **Railway** (solo Postgres)
+
+El repo incluye [`vercel.json`](./vercel.json): el **build** en Vercel ejecuta `pnpm run build:vercel` → `prisma generate` + **`db push`** + **`db seed`** + `next build`. Así la base queda con usuarios demo sin tocar tu máquina.
+
+**En el proyecto de Vercel → Settings → Environment Variables:**
+
+| Variable | Notas |
+|----------|--------|
+| `DATABASE_URL` | La misma cadena del Postgres en Railway. Marca **Production** y, si quieres preview builds, **Preview** también. Debe existir en **build**, no solo en runtime. |
+| `AUTH_SECRET` | Obligatorio (ej. `openssl rand -base64 48`). |
+| `NEXTAUTH_URL` | URL pública exacta, ej. `https://tu-app.vercel.app` (sin `/` final). En previews cada URL es distinta: puede fallar auth si no coincide. |
+| `NEXT_PUBLIC_APP_URL` | Igual que `NEXTAUTH_URL` en producción. |
+
+Tras guardar variables, **Redeploy** (Deployments → … → Redeploy).
+
 ## Desarrollo local
 
 ```bash

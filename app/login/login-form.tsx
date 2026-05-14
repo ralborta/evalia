@@ -31,11 +31,18 @@ export default function LoginForm() {
     });
     setLoading(false);
     if (res?.error) {
-      setError(
-        res.error === "CredentialsSignin"
-          ? "Correo o contraseña incorrectos."
-          : "No se pudo iniciar sesión. Si acabas de desplegar, ejecuta el seed o db:reset-admin contra la misma base de datos que usa Railway.",
-      );
+      const err = res.error;
+      if (err === "CredentialsSignin") {
+        setError("Correo o contraseña incorrectos.");
+      } else if (err === "Configuration") {
+        setError(
+          "Error de configuración de sesión. En Vercel revisa AUTH_SECRET (o NEXTAUTH_SECRET), NEXTAUTH_URL y NEXT_PUBLIC_APP_URL con tu URL https:// exacta.",
+        );
+      } else {
+        setError(
+          `No se pudo iniciar sesión (${err}). En Vercel: DATABASE_URL hacia tu Postgres (Railway), variables de auth, y que el build ejecute seed (build:vercel en vercel.json).`,
+        );
+      }
       return;
     }
     router.push(callbackUrl);
