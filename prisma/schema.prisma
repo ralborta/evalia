@@ -1,0 +1,169 @@
+// EvalIA — esquema alineado al brief técnico + roles agente (A+B)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EVALUATOR
+  AGENT
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(EVALUATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  linkedCandidate Candidate?
+  interviewsCreated Interview[] @relation("InterviewCreatedBy")
+}
+
+model Candidate {
+  id            String   @id @default(cuid())
+  name          String
+  email         String?
+  phone         String?
+  linkedUserId  String?  @unique
+  linkedUser    User?    @relation(fields: [linkedUserId], references: [id])
+  interviews    Interview[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model JobPosition {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  targetLevel EnglishLevel?
+  interviews  Interview[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model EvaluationProfile {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  configJson  Json
+  interviews  Interview[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum InterviewAudience {
+  EXTERNAL_CANDIDATE
+  INTERNAL_AGENT
+}
+
+model Interview {
+  id                       String              @id @default(cuid())
+  publicToken              String              @unique
+  audience                 InterviewAudience   @default(EXTERNAL_CANDIDATE)
+  candidateId              String
+  candidate                Candidate           @relation(fields: [candidateId], references: [id])
+  jobPositionId            String
+  jobPosition              JobPosition         @relation(fields: [jobPositionId], references: [id])
+  evaluationProfileId      String
+  evaluationProfile        EvaluationProfile   @relation(fields: [evaluationProfileId], references: [id])
+  createdById              String?
+  createdBy                User?               @relation("InterviewCreatedBy", fields: [createdById], references: [id])
+  status                   InterviewStatus     @default(CREATED)
+  durationMinutes          Int                 @default(8)
+  targetLevel              EnglishLevel?
+  elevenlabsConversationId String?
+  elevenlabsAgentId        String?
+  startedAt                DateTime?
+  finishedAt               DateTime?
+  durationSeconds          Int?
+  transcript               String?
+  summary                  String?
+  audioUrl                 String?
+  rawWebhookPayload        Json?
+  internalNotes            String?
+  expiresAt                DateTime?
+  sentManuallyAt           DateTime?
+  evaluation               Evaluation?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+}
+
+enum InterviewStatus {
+  CREATED
+  LINK_READY
+  IN_PROGRESS
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+enum EnglishLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+model Evaluation {
+  id                String             @id @default(cuid())
+  interviewId       String             @unique
+  interview         Interview          @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  overallScore      Int
+  estimatedLevel    EnglishLevel
+  recommendation    Recommendation
+  roleFit           String?
+  operationalRisk   String?
+  executiveSummary  String
+  strengths         Json
+  weaknesses        Json
+  risks             Json
+  suggestedNextStep String?
+  rawJson           Json
+  metrics           EvaluationMetric[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+enum Recommendation {
+  RECOMMENDED
+  RECOMMENDED_WITH_OBSERVATIONS
+  NEEDS_HUMAN_REVIEW
+  NOT_RECOMMENDED_FOR_ROLE
+}
+
+model EvaluationMetric {
+  id           String     @id @default(cuid())
+  evaluationId String
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  key          String
+  label        String
+  score        Int
+  weight       Int?
+  comment      String?
+  createdAt    DateTime   @default(now())
+}
+
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  provider   String
+  eventType  String?
+  externalId String?
+  payload    Json
+  processed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, externalId])
+}
