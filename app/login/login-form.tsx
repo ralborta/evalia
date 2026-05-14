@@ -24,14 +24,18 @@ export default function LoginForm() {
     setLoading(true);
     setError(null);
     const res = await signIn("credentials", {
-      email,
+      email: email.trim().toLowerCase(),
       password,
       redirect: false,
       callbackUrl,
     });
     setLoading(false);
     if (res?.error) {
-      setError("Correo o contraseña incorrectos.");
+      setError(
+        res.error === "CredentialsSignin"
+          ? "Correo o contraseña incorrectos."
+          : "No se pudo iniciar sesión. Si acabas de desplegar, ejecuta el seed o db:reset-admin contra la misma base de datos que usa Railway.",
+      );
       return;
     }
     router.push(callbackUrl);

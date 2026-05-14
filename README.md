@@ -16,6 +16,14 @@ pnpm exec prisma db push
 pnpm exec prisma db seed
 ```
 
+Si el login falla en producción pero las credenciales son correctas, la BD del deploy puede no tener usuarios. Con la misma `DATABASE_URL` que usa Railway:
+
+```bash
+pnpm db:reset-admin
+```
+
+(o `pnpm db:seed` para cargar demo completo).
+
 ## Desarrollo local
 
 ```bash
