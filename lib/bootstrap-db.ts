@@ -2,6 +2,18 @@ import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 import { prisma } from "./prisma";
 
+let bootstrapOnce: Promise<void> | null = null;
+
+/**
+ * Garantiza una sola ejecución en paralelo por instancia (p. ej. serverless en Vercel).
+ * Útil antes de login: el hook `instrumentation` no siempre corre antes de la primera petición a `/api/auth`.
+ */
+export function ensureDatabaseBootstrapped(): Promise<void> {
+  if (process.env.DISABLE_DB_BOOTSTRAP === "1") return Promise.resolve();
+  bootstrapOnce ??= bootstrapDatabaseIfNeeded();
+  return bootstrapOnce;
+}
+
 /**
  * En el primer arranque del servidor (Railway/Vercel), si la BD está vacía aplica el seed completo.
  * Si ya hay usuarios, solo asegura admin@evalia.app / admin (por si el pre-deploy no corrió).

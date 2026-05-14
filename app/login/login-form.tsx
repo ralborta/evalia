@@ -33,7 +33,9 @@ export default function LoginForm() {
     if (res?.error) {
       const err = res.error;
       if (err === "CredentialsSignin") {
-        setError("Correo o contraseña incorrectos.");
+        setError(
+          "Correo o contraseña incorrectos. En Vercel: revisa que DATABASE_URL (runtime) sea la de tu Postgres en Railway y vuelve a intentar; el primer login puede crear el admin si la base estaba vacía.",
+        );
       } else if (err === "Configuration") {
         setError(
           "Error de configuración de sesión. En Vercel revisa AUTH_SECRET (o NEXTAUTH_SECRET), NEXTAUTH_URL y NEXT_PUBLIC_APP_URL con tu URL https:// exacta.",

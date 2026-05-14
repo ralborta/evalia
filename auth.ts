@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { ensureDatabaseBootstrapped } from "@/lib/bootstrap-db";
 import { prisma } from "@/lib/prisma";
 
 const credentialsSchema = z.object({
@@ -27,6 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const parsed = credentialsSchema.safeParse(raw);
           if (!parsed.success) return null;
+          await ensureDatabaseBootstrapped();
           const email = parsed.data.email.trim().toLowerCase();
           const { password } = parsed.data;
           const user = await prisma.user.findUnique({ where: { email } });
