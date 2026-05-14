@@ -1,13 +1,19 @@
 import "dotenv/config";
-import { PrismaClient, InterviewStatus, EnglishLevel, Recommendation, UserRole, InterviewAudience } from "@prisma/client";
+import {
+  InterviewAudience,
+  InterviewStatus,
+  EnglishLevel,
+  Recommendation,
+  UserRole,
+} from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 const SEED_TOKEN_COMPLETED = "seed00000000000000000001completed";
 const SEED_TOKEN_AGENT = "seed00000000000000000002agentlnk";
 
-async function main() {
+/** Seed idempotente (upserts). Usado por CLI, Railway pre-deploy y bootstrap en runtime. */
+export async function runSeed() {
   const passwordDemo = await bcrypt.hash("demo12345", 10);
   const passwordAdmin = await bcrypt.hash("admin", 10);
 
@@ -190,11 +196,3 @@ async function main() {
   console.log("Entrevista demo completada — link:", `/interview/${SEED_TOKEN_COMPLETED}`);
   console.log("Entrevista agente (link listo) — link:", `/interview/${SEED_TOKEN_AGENT}`);
 }
-
-main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });

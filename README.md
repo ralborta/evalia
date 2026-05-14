@@ -6,6 +6,8 @@ MVP de entrevistas orales en inglés (ElevenLabs) + panel evaluador/agente + inf
 
 El repo incluye [`railway.json`](./railway.json): en **cada deploy** Railway ejecuta **`pnpm run db:deploy`** (esquema Prisma + **seed** con usuarios demo, admin `admin@evalia.app` / `admin`, entrevistas de prueba, etc.) y luego arranca la app con **`pnpm start`**.
 
+Además, al **arrancar** el servidor Next se ejecuta [`instrumentation.ts`](./instrumentation.ts): si la base **no tiene usuarios**, aplica el seed completo; si ya hay datos, **asegura** la contraseña del admin. Desactivar: `DISABLE_DB_BOOTSTRAP=1`.
+
 1. Crea **PostgreSQL** en Railway y enlaza **`DATABASE_URL`** al servicio web (EvalIA).
 2. Variables obligatorias en el servicio **web**: `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_APP_URL` (URL pública `https://…` de **Railway**, sin `/` final).
 3. Haz **redeploy** (o push a `main`). No hace falta correr Prisma desde tu Mac.
