@@ -56,23 +56,42 @@ export default async function InterviewsListPage() {
               </tr>
             </thead>
             <tbody>
-              {interviews.map((row) => (
-                <tr key={row.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 font-medium">{row.candidate.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{row.jobPosition.title}</td>
-                  <td className="px-4 py-3 text-slate-600">{row.evaluationProfile.name}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant="secondary">{statusLabel[row.status] ?? row.status}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{row.evaluation?.estimatedLevel ?? "—"}</td>
-                  <td className="px-4 py-3">{row.evaluation?.overallScore ?? "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/interviews/${row.id}`} className="text-violet-700 hover:underline">
-                      Detalle
+              {interviews.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-600">
+                    <p className="font-medium text-slate-800">No hay entrevistas en esta base de datos.</p>
+                    <p className="mt-2 max-w-lg mx-auto">
+                      Esto no lista conversaciones de ElevenLabs: solo filas creadas aquí (Nueva entrevista) o por el
+                      seed. Las conversaciones de ElevenLabs se enlazan al abrir el detalle de una entrevista e
+                      importar el <span className="font-mono text-xs">conversation_id</span>.
+                    </p>
+                    <Link
+                      href="/interviews/new"
+                      className="mt-4 inline-block text-sm font-medium text-violet-700 hover:underline"
+                    >
+                      Crear nueva entrevista
                     </Link>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                interviews.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-100 last:border-0">
+                    <td className="px-4 py-3 font-medium">{row.candidate.name}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.jobPosition.title}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.evaluationProfile.name}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary">{statusLabel[row.status] ?? row.status}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{row.evaluation?.estimatedLevel ?? "—"}</td>
+                    <td className="px-4 py-3">{row.evaluation?.overallScore ?? "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={`/interviews/${row.id}`} className="text-violet-700 hover:underline">
+                        Detalle
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </CardContent>
