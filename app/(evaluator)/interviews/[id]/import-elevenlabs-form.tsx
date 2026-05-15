@@ -50,7 +50,7 @@ export function ImportElevenLabsForm({ interviewId, compact }: Props) {
         </Label>
         <Input
           id="el-conv-id"
-          placeholder="Lo copiás desde ElevenLabs si te lo pasó soporte"
+          placeholder="Te lo pasa soporte o lo ves en el panel del proveedor de voz"
           value={conversationId}
           onChange={(e) => setConversationId(e.target.value)}
           autoComplete="off"
@@ -89,9 +89,9 @@ export function ImportElevenLabsForm({ interviewId, compact }: Props) {
   return (
     <Card className="border border-violet-200/80 bg-gradient-to-br from-violet-50/90 via-white to-indigo-50/50 shadow-md shadow-violet-200/30">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-bold text-violet-950">Importar desde ElevenLabs</CardTitle>
+        <CardTitle className="text-lg font-bold text-violet-950">Importar conversación manualmente</CardTitle>
         <CardDescription className="text-slate-600">
-          Pega el <span className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-xs text-violet-800">conversation_id</span> del panel o API de ConvAI. Se asocia a{" "}
+          Pega el <span className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-xs text-violet-800">conversation_id</span> que te indique soporte o el panel del proveedor de voz. Se asocia a{" "}
           <strong>esta</strong> entrevista y se sobrescribe transcript / metadatos.
         </CardDescription>
       </CardHeader>

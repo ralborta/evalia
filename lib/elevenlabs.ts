@@ -16,10 +16,10 @@ export async function getSignedConversationUrl(agentId: string): Promise<string>
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`ElevenLabs signed URL error ${res.status}: ${text}`);
+    throw new Error(`Error del servicio de voz al firmar la URL (${res.status}): ${text}`);
   }
 
   const data = (await res.json()) as { signed_url?: string };
-  if (!data.signed_url) throw new Error("Respuesta ElevenLabs sin signed_url");
+  if (!data.signed_url) throw new Error("El servicio de voz no devolvió el enlace firmado.");
   return data.signed_url;
 }

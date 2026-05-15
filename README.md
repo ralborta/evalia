@@ -1,6 +1,6 @@
 # EvalIA
 
-MVP de entrevistas orales en inglés (ElevenLabs) + panel evaluador/agente + informes con IA.
+MVP de entrevistas orales en inglés (motor de voz / conversación) + panel evaluador/agente + informes con IA.
 
 ## Despliegue en **Railway** (app + Postgres)
 

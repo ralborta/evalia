@@ -34,7 +34,7 @@ export async function fetchElevenLabsConversation(conversationId: string): Promi
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`ElevenLabs GET conversation ${res.status}: ${text}`);
+    throw new Error(`Error del servicio de voz al obtener la conversación (${res.status}): ${text}`);
   }
 
   return (await res.json()) as GetConversationPayload;
@@ -43,7 +43,7 @@ export async function fetchElevenLabsConversation(conversationId: string): Promi
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /**
- * Tras colgar, ElevenLabs a veces tarda unos segundos en exponer el transcript en GET conversation.
+ * Tras colgar, el proveedor de voz a veces tarda unos segundos en exponer el transcript en GET conversation.
  * Reintenta hasta que haya texto o se agoten los intentos (para no depender solo del webhook).
  */
 export async function fetchElevenLabsConversationWhenTranscriptReady(

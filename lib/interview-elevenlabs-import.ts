@@ -31,7 +31,7 @@ export async function importElevenLabsConversationIntoInterview(
   const linked = extractInterviewIdFromConversationPayload(payload);
   if (linked && linked !== interviewId) {
     throw new Error(
-      `Esta conversación en ElevenLabs referencia otra entrevista (${linked}). Importa desde el detalle correcto o usa una conversación sin interview_id en variables.`,
+      `Esta conversación ya está asociada a otra entrevista (${linked}). Abrí el detalle correcto o usá una conversación sin interview_id en las variables dinámicas.`,
     );
   }
 
@@ -83,7 +83,7 @@ export type AfterCallSyncResult =
   | { mode: "pending_webhook"; reason: "transcript_not_ready" | "sync_error"; detail?: string };
 
 /**
- * Tras "Finalizar entrevista": intenta traer transcript + evaluar vía API ElevenLabs
+ * Tras "Finalizar entrevista": intenta traer transcript + evaluar vía API del proveedor de voz
  * (con reintentos), sin esperar al webhook. Si no hay transcript aún, queda PROCESSING para el webhook.
  */
 export async function trySyncInterviewAfterCallEnd(interviewId: string): Promise<AfterCallSyncResult> {

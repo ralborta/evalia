@@ -289,9 +289,9 @@ export function InterviewsListClient({ metrics, rows }: { metrics: InterviewMetr
                       <>
                         <p className="font-semibold text-slate-800">No hay entrevistas en esta base de datos.</p>
                         <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-slate-600">
-                          Esto no lista conversaciones de ElevenLabs: solo filas creadas aquí (Nueva entrevista) o por el
-                          seed. Las conversaciones de ElevenLabs se enlazan al abrir el detalle de una entrevista e
-                          importar el{" "}
+                          Esto no lista conversaciones externas del motor de voz: solo filas creadas aquí (Nueva
+                          entrevista) o por el seed. Esas conversaciones se enlazan al abrir el detalle de una entrevista
+                          e importar el{" "}
                           <span className="font-mono text-xs text-blue-700">conversation_id</span>.
                         </p>
                         <Link

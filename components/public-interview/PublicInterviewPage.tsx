@@ -129,10 +129,12 @@ function Inner({ token }: { token: string }) {
       setFinishNote("Evaluación generada. El equipo ya puede ver el informe en el panel.");
     } else if (data.sync?.mode === "pending_webhook") {
       setFinishNote(
-        "Seguimos procesando el audio en ElevenLabs; el informe aparecerá en breve (o cuando llegue el webhook).",
+        "Seguimos procesando el audio; el informe aparecerá en breve (o cuando llegue la notificación automática).",
       );
     } else if (data.sync?.mode === "skipped" && data.sync?.reason === "no_conversation_id") {
-      setFinishNote("No se registró el id de conversación; el evaluador puede importarla manualmente desde ElevenLabs.");
+      setFinishNote(
+        "No se registró el id de conversación; el evaluador puede importarla manualmente desde el apartado de soporte del panel.",
+      );
     }
     setStep("done");
   }

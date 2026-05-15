@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { trySyncInterviewAfterCallEnd } from "@/lib/interview-elevenlabs-import";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { InterviewStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
-/** Reintentos ElevenLabs al cerrar; evitar timeout en serverless. */
+/** Reintentos al cerrar la llamada; evitar timeout en serverless. */
 export const maxDuration = 45;
 
 export async function POST(_req: Request, ctx: { params: Promise<{ token: string }> }) {
@@ -21,6 +22,10 @@ export async function POST(_req: Request, ctx: { params: Promise<{ token: string
   });
 
   const sync = await trySyncInterviewAfterCallEnd(interview.id);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/interviews");
+  revalidatePath(`/interviews/${interview.id}`);
 
   return NextResponse.json({ ok: true, sync });
 }

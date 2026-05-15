@@ -35,7 +35,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (message.includes("Entrevista no encontrada")) {
       return NextResponse.json({ error: message }, { status: 404 });
     }
-    if (message.includes("ElevenLabs GET") || message.includes("signed_url")) {
+    if (message.includes("servicio de voz")) {
       return NextResponse.json({ error: message }, { status: 502 });
     }
     if (message.includes("OPENAI_API_KEY") || message.includes("OpenAI")) {

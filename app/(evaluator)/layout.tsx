@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { Bell, Layers, LogOut } from "lucide-react";
 import { EvaluatorNav } from "@/components/app-shell/evaluator-nav";
+import { RefreshOnFocus } from "@/components/evaluator/refresh-on-focus";
 import { prisma } from "@/lib/prisma";
 import { personInitials } from "@/lib/initials";
 
@@ -77,7 +78,10 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
             </div>
           </div>
         </header>
-        <main className="flex-1 p-5 md:p-8">{children}</main>
+        <main className="flex-1 p-5 md:p-8">
+          <RefreshOnFocus />
+          {children}
+        </main>
       </div>
     </div>
   );

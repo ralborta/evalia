@@ -13,7 +13,7 @@
     "db:reset-admin": "tsx prisma/reset-admin.ts",
     "db:studio": "prisma studio",
     "db:deploy": "prisma db push && prisma db seed",
-    "import:elevenlabs": "tsx scripts/import-elevenlabs-conversation.ts",
+    "import:conversation": "tsx scripts/import-conversation.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

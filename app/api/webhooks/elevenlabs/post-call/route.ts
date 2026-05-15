@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { verifyElevenLabsWebhookSignature } from "@/lib/webhook-security";
 import {
@@ -108,5 +109,10 @@ export async function POST(req: Request) {
   }
 
   await markProcessed();
+
+  revalidatePath("/dashboard");
+  revalidatePath("/interviews");
+  revalidatePath(`/interviews/${interview.id}`);
+
   return NextResponse.json({ ok: true });
 }

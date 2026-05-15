@@ -71,7 +71,7 @@ export default function LoginForm() {
             Entrevistas claras, informes accionables.
           </h2>
           <p className="mt-6 max-w-sm text-sm leading-relaxed text-slate-300">
-            Voz segura con ElevenLabs, panel para evaluadores y experiencia guiada para candidatos — sin exponer claves
+            Voz segura con motor de conversación, panel para evaluadores y experiencia guiada para candidatos — sin exponer claves
             en el navegador del invitado.
           </p>
         </div>

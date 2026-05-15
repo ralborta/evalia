@@ -1,10 +1,10 @@
 /**
- * Importa transcript (y metadatos) desde la API de ElevenLabs ConvAI hacia una Interview de EvalIA,
+ * Importa transcript (y metadatos) desde la API del proveedor de voz hacia una Interview de EvalIA,
  * y opcionalmente ejecuta la evaluación OpenAI (mismo flujo que el webhook post-call).
  *
  * Uso:
- *   pnpm import:elevenlabs -- <conversation_id> [<conversation_id> ...]
- *   pnpm import:elevenlabs -- --conversation=xxx --interview=<cuid_evalia>
+ *   pnpm import:conversation -- <conversation_id> [<conversation_id> ...]
+ *   pnpm import:conversation -- --conversation=xxx --interview=<cuid_evalia>
  *
  * Opciones:
  *   --interview=<id>   Entrevista EvalIA (obligatoria si la conversación no está enlazada por conversation_id en BD ni trae interview_id en variables dinámicas)
@@ -78,7 +78,7 @@ async function resolveInterviewId(
 }
 
 async function importOne(conversationId: string, args: Args): Promise<void> {
-  console.info(`\n→ Conversación ElevenLabs: ${conversationId}`);
+  console.info(`\n→ Conversación externa: ${conversationId}`);
   const payload = await fetchElevenLabsConversation(conversationId);
   const transcript = formatConversationTranscript(payload.transcript);
   if (!transcript.trim()) {
@@ -117,8 +117,8 @@ async function main() {
 
   if (args.conversationIds.length === 0) {
     console.error(`Uso:
-  pnpm import:elevenlabs -- <conversation_id> [conversation_id ...]
-  pnpm import:elevenlabs -- --conversation=id1,id2 --interview=<cuid>   # solo un id con --interview
+  pnpm import:conversation -- <conversation_id> [conversation_id ...]
+  pnpm import:conversation -- --conversation=id1,id2 --interview=<cuid>   # solo un id con --interview
 
 Requiere DATABASE_URL y ELEVENLABS_API_KEY. Opcional: OPENAI_API_KEY (si no usas --no-eval).
 `);

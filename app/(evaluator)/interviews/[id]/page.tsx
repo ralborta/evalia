@@ -229,7 +229,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
                   El informe suele generarse en pocos minutos cuando ya hay transcripción. Si pasó más tiempo y sigue
                   vacío, probá <strong className="font-semibold text-slate-800">Reprocesar evaluación</strong> (con
-                  transcripción) o importá la conversación desde ElevenLabs en el apartado de soporte más abajo.
+                  transcripción) o importá la conversación con el id que te indique soporte, en el apartado más abajo.
                 </p>
               </div>
             </div>
