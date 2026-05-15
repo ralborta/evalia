@@ -12,14 +12,13 @@
  *   --dry-run          Solo muestra preview; no escribe en BD
  */
 import "dotenv/config";
-import { InterviewStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import {
   extractInterviewIdFromConversationPayload,
   fetchElevenLabsConversation,
   formatConversationTranscript,
 } from "../lib/elevenlabs-conversation";
-import { runInterviewEvaluation } from "../lib/evaluation";
+import { importElevenLabsConversationIntoInterview } from "../lib/interview-elevenlabs-import";
 
 type Args = {
   conversationIds: string[];
@@ -78,10 +77,7 @@ async function resolveInterviewId(
   );
 }
 
-async function importOne(
-  conversationId: string,
-  args: Args,
-): Promise<void> {
+async function importOne(conversationId: string, args: Args): Promise<void> {
   console.info(`\n→ Conversación ElevenLabs: ${conversationId}`);
   const payload = await fetchElevenLabsConversation(conversationId);
   const transcript = formatConversationTranscript(payload.transcript);
@@ -90,10 +86,6 @@ async function importOne(
     return;
   }
 
-  const summary =
-    (payload.analysis && typeof payload.analysis.transcript_summary === "string"
-      ? payload.analysis.transcript_summary
-      : null) ?? undefined;
   const durationSeconds =
     typeof payload.metadata?.call_duration_secs === "number"
       ? payload.metadata.call_duration_secs
@@ -106,36 +98,12 @@ async function importOne(
   }
 
   const interviewId = await resolveInterviewId(conversationId, payload, args.interviewId);
-
-  await prisma.interview.update({
-    where: { id: interviewId },
-    data: {
-      elevenlabsConversationId: conversationId,
-      transcript,
-      summary: summary ?? undefined,
-      durationSeconds: durationSeconds ?? undefined,
-      rawWebhookPayload: payload as object,
-      status: InterviewStatus.PROCESSING,
-    },
+  const result = await importElevenLabsConversationIntoInterview(interviewId, conversationId, {
+    runEvaluation: !args.noEval,
   });
-  console.info(`  Entrevista EvalIA: ${interviewId} (transcript guardado)`);
-
-  if (args.noEval) {
-    console.info("  --no-eval: no se ejecutó evaluación OpenAI (puedes usar «Reprocesar» en el panel).");
-    return;
-  }
-
-  try {
-    await runInterviewEvaluation(interviewId);
-    console.info("  Evaluación completada (COMPLETED).");
-  } catch (e) {
-    console.error("  Error en evaluación:", e);
-    await prisma.interview.update({
-      where: { id: interviewId },
-      data: { status: InterviewStatus.FAILED },
-    });
-    process.exitCode = 1;
-  }
+  console.info(`  Entrevista EvalIA: ${interviewId} (${result.transcriptChars} caracteres)`);
+  if (result.evaluated) console.info("  Evaluación completada (COMPLETED).");
+  else console.info("  --no-eval: no se ejecutó evaluación OpenAI.");
 }
 
 async function main() {
@@ -158,7 +126,12 @@ Requiere DATABASE_URL y ELEVENLABS_API_KEY. Opcional: OPENAI_API_KEY (si no usas
   }
 
   for (const cid of args.conversationIds) {
-    await importOne(cid, args);
+    try {
+      await importOne(cid, args);
+    } catch (e) {
+      console.error(e);
+      process.exitCode = 1;
+    }
   }
 }
 

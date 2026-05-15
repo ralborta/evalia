@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReprocessEvaluation } from "./reprocess";
+import { ImportElevenLabsForm } from "./import-elevenlabs-form";
 
 const recLabel: Record<string, string> = {
   RECOMMENDED: "Recomendado",
@@ -63,6 +64,8 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
           <ReprocessEvaluation interviewId={interview.id} hasTranscript={!!interview.transcript?.trim()} />
         </div>
       </div>
+
+      <ImportElevenLabsForm interviewId={interview.id} />
 
       {interview.evaluation ? (
         <>

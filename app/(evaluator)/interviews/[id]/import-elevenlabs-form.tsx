@@ -1,0 +1,77 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function ImportElevenLabsForm({ interviewId }: { interviewId: string }) {
+  const [conversationId, setConversationId] = useState("");
+  const [runEvaluation, setRunEvaluation] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    const trimmed = conversationId.trim();
+    if (!trimmed) {
+      setMsg("Pega el conversation id de ElevenLabs.");
+      return;
+    }
+    setLoading(true);
+    const res = await fetch(`/api/interviews/${interviewId}/import-elevenlabs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId: trimmed, runEvaluation }),
+    });
+    setLoading(false);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMsg(typeof data.error === "string" ? data.error : "Error al importar");
+      return;
+    }
+    setConversationId("");
+    window.location.reload();
+  }
+
+  return (
+    <Card className="border-violet-200 bg-violet-50/40">
+      <CardHeader>
+        <CardTitle className="text-base text-violet-950">Importar desde ElevenLabs</CardTitle>
+        <CardDescription>
+          Pega el <span className="font-mono text-xs">conversation_id</span> del panel o API de ConvAI. Se asocia a{" "}
+          <strong>esta</strong> entrevista y se sobrescribe transcript / metadatos.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-4" onSubmit={(e) => void onSubmit(e)}>
+          <div className="space-y-2">
+            <Label htmlFor="el-conv-id">Conversation ID</Label>
+            <Input
+              id="el-conv-id"
+              placeholder="ej. conv_abc123…"
+              value={conversationId}
+              onChange={(e) => setConversationId(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={runEvaluation}
+              onChange={(e) => setRunEvaluation(e.target.checked)}
+              className="rounded border-slate-300"
+            />
+            Ejecutar evaluación con OpenAI tras importar
+          </label>
+          {msg ? <p className="text-sm text-slate-700">{msg}</p> : null}
+          <Button type="submit" disabled={loading}>
+            {loading ? "Importando…" : "Importar"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
