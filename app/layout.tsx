@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "EvalIA — Evaluación oral con IA",
   description: "Plataforma de entrevistas y evaluaciones con voz para equipos y candidatos.",
+  icons: {
+    icon: "/logo-evalia.png",
+    apple: "/logo-evalia.png",
+  },
 };
 
 export default function RootLayout({

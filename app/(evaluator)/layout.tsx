@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
-import { Bell, Layers, LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
+import { EvaliaLogo } from "@/components/brand/evalia-logo";
 import { EvaluatorNav } from "@/components/app-shell/evaluator-nav";
 import { RefreshOnFocus } from "@/components/evaluator/refresh-on-focus";
 import { prisma } from "@/lib/prisma";
@@ -17,16 +18,8 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
   return (
     <div className="flex min-h-full bg-[#f4f6f9]">
       <aside className="hidden w-[260px] shrink-0 flex-col border-r border-slate-200/90 bg-white shadow-sm md:flex">
-        <div className="border-b border-slate-100 px-5 py-6">
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
-              <Layers className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-lg font-bold tracking-tight text-slate-900">EvalIA</p>
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Centro de evaluación</p>
-            </div>
-          </Link>
+        <div className="border-b border-slate-100 px-5 py-5">
+          <EvaliaLogo href="/dashboard" height={44} priority />
         </div>
         <EvaluatorNav />
         <div className="mt-auto border-t border-slate-100 p-4">
@@ -48,11 +41,16 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
       </aside>
       <div className="flex min-h-full min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/95 px-5 py-4 backdrop-blur-md md:px-8">
-          <div>
-            <p className="text-lg font-semibold text-slate-900">
-              ¡Hola, {name}! <span className="font-normal">👋</span>
-            </p>
-            <p className="mt-0.5 text-sm text-slate-500">Aquí tienes el resumen de tus evaluaciones de idioma.</p>
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <div className="shrink-0 md:hidden">
+              <EvaliaLogo href="/dashboard" height={36} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-lg font-semibold text-slate-900">
+                ¡Hola, {name}! <span className="font-normal">👋</span>
+              </p>
+              <p className="mt-0.5 text-sm text-slate-500">Aquí tienes el resumen de tus evaluaciones de idioma.</p>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-4">
             <Link

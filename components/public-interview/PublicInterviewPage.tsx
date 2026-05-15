@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import { EvaliaLogo } from "@/components/brand/evalia-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -171,12 +172,7 @@ function Inner({ token }: { token: string }) {
 
   const shell = (
     <header className="relative z-20 flex items-center justify-between border-b border-white/10 px-5 py-4 backdrop-blur-md md:px-10">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 shadow-lg shadow-violet-900/50">
-          <span className="text-sm font-black tracking-tight text-white">e</span>
-        </div>
-        <span className="text-lg font-bold tracking-tight text-white">EvalIA</span>
-      </div>
+      <EvaliaLogo href={null} height={36} onDark />
       <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-200">
         <Globe className="h-3.5 w-3.5 text-violet-300" />
         English interview

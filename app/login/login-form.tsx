@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic2, Sparkles } from "lucide-react";
+import { EvaliaLogo } from "@/components/brand/evalia-logo";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -55,17 +55,9 @@ export default function LoginForm() {
     <div className="flex min-h-screen flex-col lg:flex-row">
       <div className="evalia-login-hero relative flex flex-1 flex-col justify-between px-8 py-12 text-white lg:max-w-lg lg:px-12 lg:py-16">
         <div className="relative z-10">
-          <div className="mb-12 flex items-center gap-4">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-lg ring-1 ring-white/20 backdrop-blur">
-              <Mic2 className="h-7 w-7 text-violet-200" />
-            </span>
-            <div>
-              <p className="text-2xl font-bold tracking-tight">EvalIA</p>
-              <p className="mt-0.5 flex items-center gap-1.5 text-sm text-violet-200/90">
-                <Sparkles className="h-3.5 w-3.5" />
-                Evaluación oral con IA
-              </p>
-            </div>
+          <div className="mb-12 hidden lg:block">
+            <EvaliaLogo href={null} height={48} onDark priority />
+            <p className="mt-4 text-sm text-violet-200/90">Evaluación oral con IA</p>
           </div>
           <h2 className="max-w-sm text-3xl font-bold leading-tight tracking-tight lg:text-4xl">
             Entrevistas claras, informes accionables.
@@ -86,6 +78,9 @@ export default function LoginForm() {
         <div className="w-full max-w-md space-y-8">
           <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-xl shadow-slate-300/40 ring-1 ring-slate-100">
             <div className="mb-8">
+              <div className="mb-6 lg:hidden">
+                <EvaliaLogo href={null} height={40} />
+              </div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">Bienvenido de vuelta</h1>
               <p className="mt-2 text-sm text-slate-500">Ingresa con tu cuenta de evaluador o agente.</p>
             </div>
