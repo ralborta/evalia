@@ -80,13 +80,28 @@ function Inner({ token }: { token: string }) {
     setStep("room");
   }
 
+  const [finishNote, setFinishNote] = useState<string | null>(null);
+
   async function finish() {
+    setFinishNote(null);
     try {
       await endSession();
     } catch {
       /* ignore */
     }
-    await fetch(`/api/public/interviews/${token}/finish`, { method: "POST" });
+    const res = await fetch(`/api/public/interviews/${token}/finish`, { method: "POST" });
+    const data = (await res.json().catch(() => ({}))) as {
+      sync?: { mode?: string; reason?: string };
+    };
+    if (data.sync?.mode === "evaluated") {
+      setFinishNote("Evaluación generada. El equipo ya puede ver el informe en el panel.");
+    } else if (data.sync?.mode === "pending_webhook") {
+      setFinishNote(
+        "Seguimos procesando el audio en ElevenLabs; el informe aparecerá en breve (o cuando llegue el webhook).",
+      );
+    } else if (data.sync?.mode === "skipped" && data.sync?.reason === "no_conversation_id") {
+      setFinishNote("No se registró el id de conversación; el evaluador puede importarla manualmente desde ElevenLabs.");
+    }
     setStep("done");
   }
 
@@ -205,8 +220,9 @@ function Inner({ token }: { token: string }) {
             <CardHeader>
               <CardTitle className="text-lg text-white">Entrevista finalizada</CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-slate-200">
+            <CardContent className="space-y-3 text-sm text-slate-200">
               <p>Thank you for completing the interview. The evaluation team will review your results.</p>
+              {finishNote ? <p className="rounded-lg bg-white/10 px-3 py-2 text-xs text-slate-100">{finishNote}</p> : null}
             </CardContent>
           </Card>
         ) : null}

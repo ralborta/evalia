@@ -40,6 +40,28 @@ export async function fetchElevenLabsConversation(conversationId: string): Promi
   return (await res.json()) as GetConversationPayload;
 }
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/**
+ * Tras colgar, ElevenLabs a veces tarda unos segundos en exponer el transcript en GET conversation.
+ * Reintenta hasta que haya texto o se agoten los intentos (para no depender solo del webhook).
+ */
+export async function fetchElevenLabsConversationWhenTranscriptReady(
+  conversationId: string,
+  opts: { maxAttempts?: number; delayMs?: number } = {},
+): Promise<GetConversationPayload | null> {
+  const maxAttempts = opts.maxAttempts ?? 12;
+  const delayMs = opts.delayMs ?? 800;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const payload = await fetchElevenLabsConversation(conversationId);
+    const text = formatConversationTranscript(payload.transcript);
+    if (text.trim()) return payload;
+    await sleep(delayMs);
+  }
+  return null;
+}
+
 /** Texto plano tipo webhook, ordenado por tiempo en llamada. */
 export function formatConversationTranscript(turns: TranscriptTurn[] | undefined): string {
   if (!turns?.length) return "";

@@ -157,8 +157,9 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
       ) : (
         <Card>
           <CardContent className="py-10 text-center text-sm text-slate-500">
-            Aún no hay evaluación generada. Cuando ElevenLabs envíe el webhook post-call o pulses reprocesar (si ya hay
-            transcripción), aparecerá el informe aquí.
+            Aún no hay evaluación generada. Al finalizar la llamada intentamos traer el transcript desde ElevenLabs y
+            evaluar en línea; si aún no estaba listo, cuando ElevenLabs envíe el webhook post-call aparecerá el informe.
+            También puedes usar reprocesar si ya hay transcripción.
           </CardContent>
         </Card>
       )}
