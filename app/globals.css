@@ -4,10 +4,29 @@
   --evalia-navy: #050b2e;
   --evalia-accent: #6347d1;
   --evalia-cyan: #38bdf8;
+  --evalia-violet-glow: rgba(99, 71, 209, 0.35);
 }
 
 body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.evalia-page-bg {
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 100% -20%, rgba(99, 71, 209, 0.08), transparent 50%),
+    radial-gradient(ellipse 80% 60% at 0% 100%, rgba(56, 189, 248, 0.06), transparent 45%);
+}
+
+.evalia-sidebar {
+  background: linear-gradient(165deg, #0f172a 0%, #1e1b4b 48%, #0c1226 100%);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+}
+
+.evalia-glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
 }
 
 @keyframes evalia-pulse {
@@ -24,4 +43,29 @@ body {
 
 .evalia-orb {
   animation: evalia-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes evalia-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.evalia-login-hero {
+  background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 40%, #312e81 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.evalia-login-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(99, 71, 209, 0.45), transparent 42%),
+    radial-gradient(circle at 80% 70%, rgba(56, 189, 248, 0.2), transparent 40%);
+  pointer-events: none;
 }

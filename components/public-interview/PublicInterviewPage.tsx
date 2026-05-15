@@ -108,7 +108,10 @@ function Inner({ token }: { token: string }) {
   if (!meta) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#050b2e] text-white">
-        <p className="text-sm text-slate-300">Cargando…</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-violet-500/40" />
+          <p className="text-sm text-slate-400">Cargando entrevista…</p>
+        </div>
       </div>
     );
   }
@@ -124,46 +127,61 @@ function Inner({ token }: { token: string }) {
             : "No se puede abrir esta entrevista.";
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#050b2e] px-6 text-center text-white">
-        <Mic2 className="mb-4 h-10 w-10 text-violet-400" />
-        <p className="max-w-md text-lg">{copy}</p>
+        <div className="evalia-glass-card max-w-md rounded-3xl px-8 py-10">
+          <Mic2 className="mx-auto mb-4 h-12 w-12 text-violet-300" />
+          <p className="text-lg font-medium leading-snug">{copy}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#050b2e] text-white">
-      <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600">
-            <Mic2 className="h-4 w-4" />
+      <div
+        className="pointer-events-none fixed inset-0 opacity-90"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,71,209,0.35), transparent), radial-gradient(ellipse 60% 40% at 100% 100%, rgba(56,189,248,0.12), transparent)",
+        }}
+      />
+      <header className="relative z-10 flex items-center justify-between border-b border-white/10 px-5 py-4 backdrop-blur-md md:px-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-900/40">
+            <Mic2 className="h-5 w-5 text-white" />
           </div>
-          <span className="font-semibold">EvalIA</span>
+          <span className="font-bold tracking-tight">EvalIA</span>
         </div>
-        <span className="text-xs text-slate-400">English interview</span>
+        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+          English interview
+        </span>
       </header>
 
-      <main className="mx-auto flex max-w-lg flex-col gap-6 px-6 py-10">
+      <main className="relative z-10 mx-auto flex max-w-lg flex-col gap-8 px-5 py-10 md:px-6">
         {step === "welcome" ? (
-          <Card className="border-white/10 bg-white/5 text-white shadow-none">
-            <CardHeader>
-              <CardTitle className="text-xl text-white">{title}</CardTitle>
+          <Card className="evalia-glass-card rounded-3xl border-0 text-white shadow-2xl shadow-black/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl font-bold tracking-tight text-white">{title}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-200">
+            <CardContent className="space-y-4 text-sm leading-relaxed text-slate-200">
               <p>You are about to start a short English speaking interview.</p>
               <p>
                 This assessment will help evaluate your communication level for the role:{" "}
-                <span className="font-medium text-white">{meta.jobTitle}</span>
+                <span className="font-semibold text-white">{meta.jobTitle}</span>
               </p>
-              <p>Estimated duration: {meta.durationMinutes} minutes.</p>
-              <ul className="list-inside list-disc space-y-1 text-slate-300">
+              <p className="rounded-xl bg-white/5 px-3 py-2 text-slate-300">
+                Estimated duration: <span className="font-medium text-white">{meta.durationMinutes} minutes</span>
+              </p>
+              <ul className="list-inside list-disc space-y-1.5 text-slate-300">
                 <li>Find a quiet place.</li>
                 <li>Use headphones if possible.</li>
                 <li>Speak naturally.</li>
                 <li>Do not close this window during the interview.</li>
               </ul>
-              {err ? <p className="text-sm text-red-300">{err}</p> : null}
+              {err ? (
+                <p className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{err}</p>
+              ) : null}
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button type="button" variant="secondary" onClick={() => void checkMic()}>
+                <Button type="button" variant="secondary" className="font-semibold" onClick={() => void checkMic()}>
                   Check microphone
                 </Button>
               </div>
@@ -172,18 +190,22 @@ function Inner({ token }: { token: string }) {
         ) : null}
 
         {step === "mic" ? (
-          <Card className="border-white/10 bg-white/5 text-white shadow-none">
+          <Card className="evalia-glass-card rounded-3xl border-0 text-white shadow-2xl shadow-black/30">
             <CardHeader>
-              <CardTitle className="text-lg text-white">Micrófono listo</CardTitle>
+              <CardTitle className="text-xl font-bold text-white">Micrófono listo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-slate-200">Cuando estés preparado, inicia la conversación con el entrevistador virtual.</p>
-              {err ? <p className="text-sm text-red-300">{err}</p> : null}
-              <div className="flex gap-3">
-                <Button type="button" onClick={() => void beginInterview()}>
+              <p className="text-sm text-slate-200">
+                Cuando estés preparado, inicia la conversación con el entrevistador virtual.
+              </p>
+              {err ? (
+                <p className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{err}</p>
+              ) : null}
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" className="font-semibold" onClick={() => void beginInterview()}>
                   Start interview
                 </Button>
-                <Button type="button" variant="ghost" className="text-slate-300" onClick={() => setStep("welcome")}>
+                <Button type="button" variant="ghost" className="text-slate-300 hover:bg-white/10" onClick={() => setStep("welcome")}>
                   Volver
                 </Button>
               </div>
@@ -192,37 +214,41 @@ function Inner({ token }: { token: string }) {
         ) : null}
 
         {step === "room" ? (
-          <div className="flex flex-col items-center gap-6 text-center">
-            <div className="evalia-orb flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-800 shadow-[0_0_40px_rgba(99,71,209,0.55)]">
-              <Mic2 className="h-14 w-14 text-white/90" />
+          <div className="flex flex-col items-center gap-8 text-center">
+            <div className="evalia-orb flex h-44 w-44 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-violet-600 to-indigo-800 shadow-[0_0_60px_rgba(99,71,209,0.45)] ring-4 ring-violet-500/20">
+              <Mic2 className="h-16 w-16 text-white/95" />
             </div>
-            <div>
-              <p className="text-sm uppercase tracking-wide text-slate-400">Estado</p>
-              <p className="text-lg font-medium capitalize text-white">{status}</p>
-              <p className="text-xs text-slate-400">Modo agente: {mode}</p>
+            <div className="evalia-glass-card w-full max-w-sm rounded-2xl px-6 py-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-violet-300/90">Estado</p>
+              <p className="mt-1 text-xl font-semibold capitalize text-white">{status}</p>
+              <p className="mt-1 text-xs text-slate-400">Modo: {mode}</p>
             </div>
             <div className="flex flex-wrap justify-center gap-3">
-              <Button type="button" variant="secondary" onClick={() => setMuted(!isMuted)}>
+              <Button type="button" variant="secondary" className="min-w-[100px] font-semibold" onClick={() => setMuted(!isMuted)}>
                 {isMuted ? "Unmute" : "Mute"}
               </Button>
-              <Button type="button" variant="destructive" onClick={() => void finish()}>
+              <Button type="button" variant="destructive" className="font-semibold" onClick={() => void finish()}>
                 Finalizar entrevista
               </Button>
             </div>
-            <p className="max-w-md text-xs text-slate-500">
+            <p className="max-w-md text-xs leading-relaxed text-slate-500">
               La conversación es oral; no verás un chat completo. Mantén esta ventana abierta.
             </p>
           </div>
         ) : null}
 
         {step === "done" ? (
-          <Card className="border-white/10 bg-white/5 text-white shadow-none">
+          <Card className="evalia-glass-card rounded-3xl border-0 text-white shadow-2xl shadow-black/30">
             <CardHeader>
-              <CardTitle className="text-lg text-white">Entrevista finalizada</CardTitle>
+              <CardTitle className="text-xl font-bold text-white">Entrevista finalizada</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-slate-200">
               <p>Thank you for completing the interview. The evaluation team will review your results.</p>
-              {finishNote ? <p className="rounded-lg bg-white/10 px-3 py-2 text-xs text-slate-100">{finishNote}</p> : null}
+              {finishNote ? (
+                <p className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-xs leading-relaxed text-slate-100">
+                  {finishNote}
+                </p>
+              ) : null}
             </CardContent>
           </Card>
         ) : null}

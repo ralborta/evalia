@@ -32,31 +32,31 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
   const publicLink = `${appUrl}/interview/${interview.publicToken}`;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="mx-auto max-w-5xl space-y-8">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">
             <Link href="/interviews" className="hover:underline">
               Entrevistas
             </Link>{" "}
             / Detalle
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-900">{interview.candidate.name}</h1>
-          <p className="text-slate-600">{interview.jobPosition.title}</p>
-          <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-            <span>Estado: {interview.status}</span>
-            <span>•</span>
-            <span>Perfil: {interview.evaluationProfile.name}</span>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{interview.candidate.name}</h1>
+          <p className="mt-1 text-lg text-slate-600">{interview.jobPosition.title}</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-500">
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">{interview.status}</span>
+            <span className="rounded-full bg-violet-50 px-3 py-1 font-medium text-violet-800">
+              {interview.evaluationProfile.name}
+            </span>
             {interview.durationSeconds ? (
-              <>
-                <span>•</span>
-                <span>Duración: {Math.round(interview.durationSeconds / 60)} min</span>
-              </>
+              <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                ~{Math.round(interview.durationSeconds / 60)} min
+              </span>
             ) : null}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <a href={publicLink} target="_blank" rel="noreferrer">
               Abrir sala pública
             </a>
@@ -155,8 +155,8 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
           </div>
         </>
       ) : (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-slate-500">
+        <Card className="border-dashed border-slate-200 bg-slate-50/50">
+          <CardContent className="py-12 text-center text-sm leading-relaxed text-slate-600">
             Aún no hay evaluación generada. Al finalizar la llamada intentamos traer el transcript desde ElevenLabs y
             evaluar en línea; si aún no estaba listo, cuando ElevenLabs envíe el webhook post-call aparecerá el informe.
             También puedes usar reprocesar si ya hay transcripción.
@@ -185,7 +185,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
           <Badge variant="outline">{interview.elevenlabsConversationId ?? "sin conversation id"}</Badge>
         </CardHeader>
         <CardContent>
-          <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-900 p-4 text-xs text-slate-100">
+          <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-2xl border border-slate-700/80 bg-slate-950 p-5 text-xs leading-relaxed text-slate-100 shadow-inner">
             {interview.transcript ?? "Sin transcripción todavía."}
           </pre>
         </CardContent>

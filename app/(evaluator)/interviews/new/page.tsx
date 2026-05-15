@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { InterviewAudience } from "@prisma/client";
 
+const selectClass =
+  "flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-shadow focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-500/25";
+
 type Profile = { id: string; name: string; key: string };
 type Agent = { id: string; name: string; email: string | null };
 
@@ -99,28 +102,41 @@ export default function NewInterviewPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div className="mx-auto max-w-2xl space-y-10">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Nueva entrevista</h1>
-        <p className="text-sm text-slate-500">Genera un enlace único para el candidato o para un agente interno.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Nueva entrevista</h1>
+        <p className="mt-2 text-slate-600">Genera un enlace único para el candidato o para un agente interno.</p>
       </div>
-      <form className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm" onSubmit={onSubmit}>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="radio" checked={mode === "external"} onChange={() => setMode("external")} />
-            Candidato externo (link público)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="radio" checked={mode === "agent"} onChange={() => setMode("agent")} />
+      <form
+        className="space-y-8 rounded-3xl border border-slate-200/90 bg-white p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100"
+        onSubmit={onSubmit}
+      >
+        <div className="flex rounded-2xl bg-slate-100/90 p-1.5">
+          <button
+            type="button"
+            onClick={() => setMode("external")}
+            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+              mode === "external" ? "bg-white text-violet-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Candidato externo
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("agent")}
+            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+              mode === "agent" ? "bg-white text-violet-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
             Agente interno
-          </label>
+          </button>
         </div>
 
         {mode === "agent" ? (
           <div className="space-y-2">
             <Label>Agente</Label>
             <select
-              className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
+              className={selectClass}
               value={form.agentUserId}
               onChange={(e) => setForm((f) => ({ ...f, agentUserId: e.target.value }))}
               required
@@ -170,7 +186,7 @@ export default function NewInterviewPage() {
           <div className="space-y-2">
             <Label>Nivel esperado</Label>
             <select
-              className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
+              className={selectClass}
               value={form.targetLevel}
               onChange={(e) => setForm((f) => ({ ...f, targetLevel: e.target.value as typeof form.targetLevel }))}
             >
@@ -195,7 +211,7 @@ export default function NewInterviewPage() {
           <div className="space-y-2 sm:col-span-2">
             <Label>Perfil de evaluación</Label>
             <select
-              className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
+              className={selectClass}
               value={form.evaluationProfileId}
               onChange={(e) => setForm((f) => ({ ...f, evaluationProfileId: e.target.value }))}
               required
@@ -214,27 +230,31 @@ export default function NewInterviewPage() {
           </div>
         </div>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? (
+          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
+        ) : null}
 
-        <div className="flex flex-wrap gap-3">
-          <Button type="submit" disabled={loading}>
+        <div className="flex flex-wrap items-center gap-4 border-t border-slate-100 pt-6">
+          <Button type="submit" className="min-w-[160px] font-semibold" disabled={loading}>
             {loading ? "Creando…" : "Crear entrevista"}
           </Button>
-          <Link href="/dashboard" className="text-sm text-slate-600 underline self-center">
+          <Link href="/dashboard" className="text-sm font-medium text-slate-500 underline-offset-2 hover:text-violet-700 hover:underline">
             Volver al panel
           </Link>
         </div>
       </form>
 
       {publicUrl ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-          <p className="font-medium">Link generado</p>
-          <p className="mt-2 break-all font-mono text-xs">{publicUrl}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" size="sm" onClick={() => void copyLink()}>
+        <div className="rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 to-teal-50/80 p-6 shadow-lg shadow-emerald-900/5">
+          <p className="text-lg font-bold text-emerald-950">Link generado</p>
+          <p className="mt-3 break-all rounded-xl bg-white/80 px-4 py-3 font-mono text-xs text-emerald-900 shadow-inner">
+            {publicUrl}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" size="sm" className="font-semibold" onClick={() => void copyLink()}>
               Copiar link
             </Button>
-            <Button type="button" variant="outline" size="sm" asChild>
+            <Button type="button" variant="outline" size="sm" className="font-semibold" asChild>
               <a href={publicUrl} target="_blank" rel="noreferrer">
                 Abrir link
               </a>
@@ -243,6 +263,7 @@ export default function NewInterviewPage() {
               type="button"
               variant="outline"
               size="sm"
+              className="font-semibold"
               disabled={!createdInterviewId}
               onClick={async () => {
                 if (!createdInterviewId) return;
