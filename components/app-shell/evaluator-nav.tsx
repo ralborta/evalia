@@ -2,19 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, PlusCircle, FileBarChart, BookOpen } from "lucide-react";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  PlusCircle,
+  FileBarChart,
+  BookOpen,
+  Users,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const items = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
-  { href: "/interviews/new", label: "Nueva entrevista", icon: PlusCircle },
+const items: {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  exact?: boolean;
+}[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/interviews/new", label: "Nueva evaluación", icon: PlusCircle },
   { href: "/interviews", label: "Entrevistas", icon: ClipboardList },
+  { href: "/candidates", label: "Candidatos", icon: Users },
   { href: "/evaluation-profiles", label: "Perfiles", icon: BookOpen },
   { href: "/reports", label: "Reportes", icon: FileBarChart },
-] as const;
+  { href: "/settings", label: "Configuración", icon: Settings },
+];
 
-function navActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
+function isActive(pathname: string, href: string, exact?: boolean) {
+  if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -22,21 +37,21 @@ export function EvaluatorNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-1 flex-col gap-0.5 p-3 text-sm">
-      {items.map(({ href, label, icon: Icon }) => {
-        const active = navActive(pathname, href);
+    <nav className="flex flex-1 flex-col gap-0.5 px-3 py-4 text-[15px]">
+      {items.map(({ href, label, icon: Icon, exact }) => {
+        const active = isActive(pathname, href, exact);
         return (
           <Link
-            key={href}
+            key={href + label}
             href={href}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium transition-all duration-200",
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium transition-colors",
               active
-                ? "bg-white/[0.12] text-white shadow-inner ring-1 ring-white/10"
-                : "text-slate-400 hover:bg-white/[0.06] hover:text-white",
+                ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
+                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
             )}
           >
-            <Icon className={cn("h-4 w-4 shrink-0", active ? "text-violet-300" : "text-slate-500")} />
+            <Icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-blue-600" : "text-slate-400")} />
             {label}
           </Link>
         );

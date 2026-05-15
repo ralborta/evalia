@@ -14,7 +14,7 @@ const createSchema = z.object({
   targetLevel: z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]).optional().nullable(),
   evaluationProfileId: z.string().min(1),
   durationMinutes: z.number().int().min(3).max(60).default(8),
-  internalNotes: z.string().optional().nullable(),
+  internalNotes: z.string().max(500).optional().nullable(),
   audience: z.nativeEnum(InterviewAudience).default(InterviewAudience.EXTERNAL_CANDIDATE),
   agentUserId: z.string().optional().nullable(),
 });

@@ -1,31 +1,52 @@
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EvaluationProfilesClient } from "@/components/evaluator/evaluation-profiles-client";
+import { getProfileUiMeta } from "@/lib/evaluation-profile-ui";
+
+function startOfWeekMonday() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
 export default async function EvaluationProfilesPage() {
-  const profiles = await prisma.evaluationProfile.findMany({ orderBy: { name: "asc" } });
+  const weekStart = startOfWeekMonday();
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Perfiles de evaluación</h1>
-        <p className="text-sm text-slate-500">
-          Cada perfil orienta preguntas y el análisis del LLM hacia un contexto laboral (comercialmente no usamos la
-          palabra &quot;rúbrica&quot; en la interfaz).
-        </p>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {profiles.map((p) => (
-          <Card key={p.id}>
-            <CardHeader>
-              <CardTitle className="text-base">{p.name}</CardTitle>
-              {p.description ? <p className="text-sm text-slate-500">{p.description}</p> : null}
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs font-mono text-slate-400">key: {p.key}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
+  const [profiles, interviewsThisWeek] = await Promise.all([
+    prisma.evaluationProfile.findMany({
+      orderBy: { name: "asc" },
+      include: { _count: { select: { interviews: true } } },
+    }),
+    prisma.interview.count({ where: { createdAt: { gte: weekStart } } }),
+  ]);
+
+  const maxCount = Math.max(0, ...profiles.map((p) => p._count.interviews));
+  const topProfiles = profiles.filter((p) => p._count.interviews === maxCount && maxCount > 0);
+  const mostUsedId =
+    topProfiles.length > 0 ? topProfiles.slice().sort((a, b) => a.name.localeCompare(b.name))[0]!.id : null;
+
+  const rows = profiles.map((p, index) => ({
+    id: p.id,
+    key: p.key,
+    name: p.name,
+    description: p.description,
+    interviewCount: p._count.interviews,
+    index,
+    mostUsed: p.id === mostUsedId,
+  }));
+
+  const recommendedCount = profiles.filter((p, i) => getProfileUiMeta(p.key, i).recommended).length;
+
+  const areasCount = new Set(profiles.map((p, i) => getProfileUiMeta(p.key, i).chip)).size;
+
+  const metrics = {
+    activeCount: profiles.length,
+    recommendedCount,
+    interviewsThisWeek,
+    areasCount,
+  };
+
+  return <EvaluationProfilesClient metrics={metrics} rows={rows} />;
 }

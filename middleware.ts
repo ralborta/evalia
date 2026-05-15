@@ -1,7 +1,14 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-const evaluatorPrefixes = ["/dashboard", "/interviews", "/reports", "/evaluation-profiles"];
+const evaluatorPrefixes = [
+  "/dashboard",
+  "/interviews",
+  "/reports",
+  "/evaluation-profiles",
+  "/candidates",
+  "/settings",
+];
 const agentPrefixes = ["/agent"];
 
 export default auth((req) => {
@@ -35,6 +42,8 @@ export const config = {
     "/interviews/:path*",
     "/reports/:path*",
     "/evaluation-profiles/:path*",
+    "/candidates/:path*",
+    "/settings/:path*",
     "/agent/:path*",
   ],
 };
