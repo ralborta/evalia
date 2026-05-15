@@ -6,7 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function ImportElevenLabsForm({ interviewId }: { interviewId: string }) {
+type Props = {
+  interviewId: string;
+  /** Sin tarjeta grande: para sección colapsada / soporte. */
+  compact?: boolean;
+};
+
+export function ImportElevenLabsForm({ interviewId, compact }: Props) {
   const [conversationId, setConversationId] = useState("");
   const [runEvaluation, setRunEvaluation] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -17,7 +23,7 @@ export function ImportElevenLabsForm({ interviewId }: { interviewId: string }) {
     setMsg(null);
     const trimmed = conversationId.trim();
     if (!trimmed) {
-      setMsg("Pega el conversation id de ElevenLabs.");
+      setMsg("Completá el id de conversación antes de importar.");
       return;
     }
     setLoading(true);
@@ -36,6 +42,50 @@ export function ImportElevenLabsForm({ interviewId }: { interviewId: string }) {
     window.location.reload();
   }
 
+  const form = (
+    <form className="space-y-5" onSubmit={(e) => void onSubmit(e)}>
+      <div className="space-y-2">
+        <Label htmlFor="el-conv-id" className="text-slate-700">
+          ID de conversación
+        </Label>
+        <Input
+          id="el-conv-id"
+          placeholder="Lo copiás desde ElevenLabs si te lo pasó soporte"
+          value={conversationId}
+          onChange={(e) => setConversationId(e.target.value)}
+          autoComplete="off"
+        />
+      </div>
+      <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200/80 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm">
+        <input
+          type="checkbox"
+          checked={runEvaluation}
+          onChange={(e) => setRunEvaluation(e.target.checked)}
+          className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+        />
+        Generar informe con IA después de importar
+      </label>
+      {msg ? (
+        <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-800">{msg}</p>
+      ) : null}
+      <Button type="submit" className="font-semibold" disabled={loading}>
+        {loading ? "Importando…" : "Importar"}
+      </Button>
+    </form>
+  );
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs leading-relaxed text-slate-500">
+          Solo si el informe no se generó solo al terminar la entrevista. Si no sabés qué pegar acá, contactá a
+          soporte.
+        </p>
+        {form}
+      </div>
+    );
+  }
+
   return (
     <Card className="border border-violet-200/80 bg-gradient-to-br from-violet-50/90 via-white to-indigo-50/50 shadow-md shadow-violet-200/30">
       <CardHeader className="pb-3">
@@ -45,37 +95,7 @@ export function ImportElevenLabsForm({ interviewId }: { interviewId: string }) {
           <strong>esta</strong> entrevista y se sobrescribe transcript / metadatos.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form className="space-y-5" onSubmit={(e) => void onSubmit(e)}>
-          <div className="space-y-2">
-            <Label htmlFor="el-conv-id" className="text-slate-700">
-              Conversation ID
-            </Label>
-            <Input
-              id="el-conv-id"
-              placeholder="ej. conv_abc123…"
-              value={conversationId}
-              onChange={(e) => setConversationId(e.target.value)}
-              autoComplete="off"
-            />
-          </div>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200/80 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm">
-            <input
-              type="checkbox"
-              checked={runEvaluation}
-              onChange={(e) => setRunEvaluation(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-            />
-            Ejecutar evaluación con OpenAI tras importar
-          </label>
-          {msg ? (
-            <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-800">{msg}</p>
-          ) : null}
-          <Button type="submit" className="font-semibold" disabled={loading}>
-            {loading ? "Importando…" : "Importar"}
-          </Button>
-        </form>
-      </CardContent>
+      <CardContent>{form}</CardContent>
     </Card>
   );
 }

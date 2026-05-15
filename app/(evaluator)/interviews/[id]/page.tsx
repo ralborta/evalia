@@ -65,8 +65,6 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
         </div>
       </div>
 
-      <ImportElevenLabsForm interviewId={interview.id} />
-
       {interview.evaluation ? (
         <>
           <div className="grid gap-4 md:grid-cols-3">
@@ -156,10 +154,13 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
         </>
       ) : (
         <Card className="border-dashed border-slate-200 bg-slate-50/50">
-          <CardContent className="py-12 text-center text-sm leading-relaxed text-slate-600">
-            Aún no hay evaluación generada. Al finalizar la llamada intentamos traer el transcript desde ElevenLabs y
-            evaluar en línea; si aún no estaba listo, cuando ElevenLabs envíe el webhook post-call aparecerá el informe.
-            También puedes usar reprocesar si ya hay transcripción.
+          <CardContent className="space-y-2 py-12 text-center text-sm leading-relaxed text-slate-600">
+            <p className="text-base font-medium text-slate-800">Informe en preparación</p>
+            <p>
+              Cuando el candidato termina la entrevista, el informe suele aparecer solo en unos minutos. Si pasó más
+              tiempo y sigue vacío, probá <strong>Reprocesar evaluación</strong> arriba (si ya hay transcripción) o
+              contactá al administrador.
+            </p>
           </CardContent>
         </Card>
       )}
@@ -182,7 +183,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Transcripción</CardTitle>
-          <Badge variant="outline">{interview.elevenlabsConversationId ?? "sin conversation id"}</Badge>
+          <Badge variant="outline">{interview.elevenlabsConversationId ? "Conversación vinculada" : "Pendiente"}</Badge>
         </CardHeader>
         <CardContent>
           <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-2xl border border-slate-700/80 bg-slate-950 p-5 text-xs leading-relaxed text-slate-100 shadow-inner">
@@ -190,6 +191,18 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
           </pre>
         </CardContent>
       </Card>
+
+      <details className="group rounded-2xl border border-slate-200 bg-white shadow-sm open:shadow-md">
+        <summary className="cursor-pointer list-none rounded-2xl px-5 py-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center justify-between gap-3">
+            <span>Soporte: recuperar conversación manualmente</span>
+            <span className="text-slate-400 transition group-open:rotate-180">▼</span>
+          </span>
+        </summary>
+        <div className="border-t border-slate-100 px-5 pb-5 pt-2">
+          <ImportElevenLabsForm interviewId={interview.id} compact />
+        </div>
+      </details>
     </div>
   );
 }
