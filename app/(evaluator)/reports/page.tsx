@@ -1,6 +1,8 @@
 import { getReportsDashboardData } from "@/lib/reports-data";
 import { ReportsClient } from "@/components/evaluator/reports-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function ReportsPage({
   searchParams,
 }: {
@@ -8,5 +10,5 @@ export default async function ReportsPage({
 }) {
   const sp = await searchParams;
   const data = await getReportsDashboardData({ fromStr: sp.from, toStr: sp.to });
-  return <ReportsClient data={data} />;
+  return <ReportsClient key={`${data.fromIso}-${data.toIso}`} data={data} />;
 }
