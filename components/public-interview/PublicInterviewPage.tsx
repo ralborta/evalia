@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import type { DisconnectionDetails } from "@elevenlabs/react";
 import { EvaliaLogo } from "@/components/brand/evalia-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,14 +32,67 @@ function firstName(full: string) {
   return p || full;
 }
 
+function describeDisconnect(d: DisconnectionDetails): string {
+  if (d.reason === "user") {
+    return "La conversación se cerró.";
+  }
+  if (d.reason === "agent") {
+    const reason = d.closeReason ?? "";
+    if (/inactivity|silence|timeout/i.test(reason)) {
+      return "No se detectó tu voz durante unos segundos. Revisá el micrófono y volvé a intentar.";
+    }
+    return "La conversación se interrumpió antes de tiempo. Probá nuevamente en unos minutos.";
+  }
+  if (d.reason === "error") {
+    if (d.closeCode === 1006) {
+      return "Se perdió la conexión. Verificá tu internet y volvé a intentar.";
+    }
+    return "Hubo un problema con la conexión. Volvé a intentar en unos minutos.";
+  }
+  return "La conversación se interrumpió. Volvé a intentar en unos minutos.";
+}
+
 function Inner({ token }: { token: string }) {
-  const { startSession, endSession, status, getId, setMuted, isMuted, mode } = useConversation();
-  const [step, setStep] = useState<"welcome" | "room" | "done">("welcome");
+  const stepRef = useRef<"welcome" | "room" | "done">("welcome");
+  const [step, setStepState] = useState<"welcome" | "room" | "done">("welcome");
+  const setStep = useCallback((s: "welcome" | "room" | "done") => {
+    stepRef.current = s;
+    setStepState(s);
+  }, []);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [savedConv, setSavedConv] = useState(false);
+  const savedConvRef = useRef(false);
   const [micReady, setMicReady] = useState(false);
   const [micChecking, setMicChecking] = useState(false);
+  const [disconnectNote, setDisconnectNote] = useState<string | null>(null);
+  const startingRef = useRef(false);
+
+  const onConnect = useCallback(() => {
+    setDisconnectNote(null);
+    setErr(null);
+  }, []);
+  const onDisconnect = useCallback(
+    (details: DisconnectionDetails) => {
+      startingRef.current = false;
+      if (stepRef.current !== "room") return;
+      const note = describeDisconnect(details);
+      setDisconnectNote(note);
+      if (details.reason !== "user") setErr(note);
+      console.warn("[public-interview] disconnect", details);
+    },
+    [],
+  );
+  const onError = useCallback((message: string, context?: unknown) => {
+    console.error("[public-interview] conversation error", message, context);
+    setErr("Hubo un problema con la conexión. Volvé a intentar en unos minutos.");
+  }, []);
+
+  const { startSession, endSession, status, getId, setMuted, isMuted, mode } = useConversation({
+    onConnect,
+    onDisconnect,
+    onError,
+    useWakeLock: true,
+  });
 
   useEffect(() => {
     void (async () => {
@@ -61,16 +115,16 @@ function Inner({ token }: { token: string }) {
   }, [token]);
 
   useEffect(() => {
-    if (status !== "connected" || savedConv) return;
+    if (status !== "connected" || savedConvRef.current) return;
     const id = getId();
     if (!id) return;
-    setSavedConv(true);
+    savedConvRef.current = true;
     void fetch(`/api/public/interviews/${token}/conversation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ conversationId: id }),
     });
-  }, [status, savedConv, getId, token]);
+  }, [status, getId, token]);
 
   const greeting = useMemo(() => {
     if (!meta || !meta.ok) return "";
@@ -96,27 +150,40 @@ function Inner({ token }: { token: string }) {
 
   async function beginInterview() {
     setErr(null);
+    setDisconnectNote(null);
+    if (startingRef.current || status === "connected" || status === "connecting") return;
     if (!micReady) {
       setErr("Probá el micrófono antes de comenzar.");
       return;
     }
-    const res = await fetch(`/api/public/interviews/${token}/session`, { method: "POST" });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setErr(data.message ?? data.error ?? "No se pudo iniciar la sesión de voz");
-      return;
+    startingRef.current = true;
+    try {
+      const res = await fetch(`/api/public/interviews/${token}/session`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        startingRef.current = false;
+        console.error("[public-interview] start session failed", data);
+        setErr("No pudimos iniciar la entrevista en este momento. Volvé a intentar en unos minutos.");
+        return;
+      }
+      startSession({
+        signedUrl: data.signedUrl,
+        dynamicVariables: data.dynamicVariables,
+        useWakeLock: true,
+      });
+      setStep("room");
+    } catch (e) {
+      startingRef.current = false;
+      console.error("[public-interview] start session error", e);
+      setErr("No pudimos iniciar la entrevista en este momento. Volvé a intentar en unos minutos.");
     }
-    startSession({
-      signedUrl: data.signedUrl,
-      dynamicVariables: data.dynamicVariables,
-    });
-    setStep("room");
   }
 
   const [finishNote, setFinishNote] = useState<string | null>(null);
 
   async function finish() {
     setFinishNote(null);
+    startingRef.current = false;
     try {
       await endSession();
     } catch {
@@ -417,6 +484,25 @@ function Inner({ token }: { token: string }) {
                   tiempo para pensar.
                 </p>
               </div>
+
+              {disconnectNote ? (
+                <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  <p className="leading-relaxed">{disconnectNote}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-amber-300/60 bg-transparent font-semibold text-amber-100 hover:bg-amber-500/10"
+                      onClick={() => {
+                        setDisconnectNote(null);
+                        setStep("welcome");
+                      }}
+                    >
+                      Reintentar
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Button

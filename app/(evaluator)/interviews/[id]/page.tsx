@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReprocessEvaluation } from "./reprocess";
 import { ImportElevenLabsForm } from "./import-elevenlabs-form";
+import { StaleProcessingActions } from "./stale-processing-actions";
 import {
   ChevronDown,
   Clock,
@@ -17,6 +18,8 @@ import {
   Link2,
   Loader2,
 } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 const recLabel: Record<string, string> = {
   RECOMMENDED: "Recomendado",
@@ -75,6 +78,11 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
   const publicLink = `${appUrl}/interview/${interview.publicToken}`;
   const hasTranscript = !!interview.transcript?.trim();
   const linked = !!interview.elevenlabsConversationId;
+
+  const isStuck =
+    (interview.status === "PROCESSING" || interview.status === "IN_PROGRESS") && !interview.evaluation;
+  const referenceTime = interview.finishedAt ?? interview.updatedAt;
+  const referenceIso = new Date(referenceTime).toISOString();
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-10">
@@ -217,6 +225,12 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
             </Card>
           </div>
         </>
+      ) : isStuck ? (
+        <StaleProcessingActions
+          interviewId={interview.id}
+          referenceIso={referenceIso}
+          hasConversationId={linked}
+        />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white p-6 shadow-sm md:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
