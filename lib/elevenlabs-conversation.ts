@@ -78,6 +78,43 @@ export function formatConversationTranscript(turns: TranscriptTurn[] | undefined
   return lines.join("\n");
 }
 
+export type ConversationAudio = {
+  body: ReadableStream<Uint8Array> | null;
+  contentType: string;
+  contentLength: string | null;
+};
+
+/**
+ * Descarga el audio (mezcla) de una conversación del proveedor de voz.
+ * Devuelve el stream para proxearlo con autorización.
+ */
+export async function fetchElevenLabsConversationAudio(
+  conversationId: string,
+): Promise<ConversationAudio> {
+  const key = process.env.ELEVENLABS_API_KEY;
+  if (!key) throw new Error("ELEVENLABS_API_KEY no configurada");
+
+  const url = `${ELEVEN_BASE}/convai/conversations/${encodeURIComponent(conversationId)}/audio`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { "xi-api-key": key },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Error del servicio de voz al obtener el audio (${res.status})${text ? `: ${text}` : ""}`,
+    );
+  }
+
+  return {
+    body: res.body,
+    contentType: res.headers.get("content-type") ?? "audio/mpeg",
+    contentLength: res.headers.get("content-length"),
+  };
+}
+
 export function extractInterviewIdFromConversationPayload(payload: GetConversationPayload): string | null {
   const dyn = payload.conversation_initiation_client_data?.dynamic_variables;
   if (dyn && typeof dyn === "object") {

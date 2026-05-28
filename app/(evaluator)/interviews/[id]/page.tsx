@@ -259,12 +259,27 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
           </SectionIcon>
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold text-slate-900">Audio</h2>
-            {interview.audioUrl ? (
-              <audio controls className="mt-4 w-full max-w-lg" src={interview.audioUrl}>
-                Tu navegador no soporta audio embebido.
-              </audio>
+            {interview.audioUrl || linked ? (
+              <div className="mt-4 flex flex-col gap-3">
+                <audio controls preload="metadata" className="w-full max-w-lg" src={`/api/interviews/${interview.id}/audio`}>
+                  Tu navegador no soporta audio embebido.
+                </audio>
+                <a
+                  href={`/api/interviews/${interview.id}/audio`}
+                  download
+                  className="inline-flex w-fit items-center gap-1.5 text-xs font-semibold text-violet-700 underline-offset-2 hover:underline"
+                >
+                  Descargar grabación
+                </a>
+                <p className="text-xs text-slate-500">
+                  El audio se carga bajo demanda. Si ves un error de reproducción, la grabación aún puede no estar lista
+                  del lado del proveedor; volvé a intentar en unos minutos.
+                </p>
+              </div>
             ) : (
-              <p className="mt-3 text-sm text-slate-600">No hay URL de audio disponible para esta entrevista.</p>
+              <p className="mt-3 text-sm text-slate-600">
+                Todavía no hay grabación disponible para esta entrevista.
+              </p>
             )}
           </div>
         </div>
