@@ -85,16 +85,25 @@ export type AfterCallSyncResult =
 /**
  * Tras "Finalizar entrevista": intenta traer transcript + evaluar vía API del proveedor de voz
  * (con reintentos), sin esperar al webhook. Si no hay transcript aún, queda PROCESSING para el webhook.
+ *
+ * `poll.maxAttempts` y `poll.delayMs` permiten ajustar la ventana de espera. Por defecto ~6.5s
+ * (cierre de llamada), se puede extender hasta ~60s en background.
  */
-export async function trySyncInterviewAfterCallEnd(interviewId: string): Promise<AfterCallSyncResult> {
+export async function trySyncInterviewAfterCallEnd(
+  interviewId: string,
+  poll: { maxAttempts?: number; delayMs?: number } = {},
+): Promise<AfterCallSyncResult> {
   if (!process.env.ELEVENLABS_API_KEY?.trim()) {
     return { mode: "skipped", reason: "no_api_key" };
   }
 
   const row = await prisma.interview.findUnique({
     where: { id: interviewId },
-    select: { elevenlabsConversationId: true },
+    select: { elevenlabsConversationId: true, evaluation: { select: { id: true } } },
   });
+  if (row?.evaluation) {
+    return { mode: "evaluated", transcriptChars: 0 };
+  }
   const convId = row?.elevenlabsConversationId?.trim();
   if (!convId) {
     return { mode: "skipped", reason: "no_conversation_id" };
@@ -102,8 +111,8 @@ export async function trySyncInterviewAfterCallEnd(interviewId: string): Promise
 
   try {
     const payload = await fetchElevenLabsConversationWhenTranscriptReady(convId, {
-      maxAttempts: 10,
-      delayMs: 650,
+      maxAttempts: poll.maxAttempts ?? 10,
+      delayMs: poll.delayMs ?? 650,
     });
     if (!payload) {
       return { mode: "pending_webhook", reason: "transcript_not_ready" };
