@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 export type SendEmailInput = {
   to: string;
@@ -11,33 +11,53 @@ export type SendEmailResult =
   | { ok: true; id: string }
   | { ok: false; error: "not_configured" | "send_failed"; detail?: string };
 
+function smtpConfig() {
+  const host = process.env.SMTP_HOST?.trim();
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  const from = process.env.EMAIL_FROM?.trim();
+  if (!host || !user || !pass || !from) return null;
+
+  const port = Number(process.env.SMTP_PORT?.trim() || "587");
+  const secure =
+    process.env.SMTP_SECURE?.trim() === "true" || process.env.SMTP_SECURE?.trim() === "1" || port === 465;
+
+  return { host, user, pass, from, port, secure };
+}
+
 export function isEmailConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY?.trim() && process.env.EMAIL_FROM?.trim());
+  return smtpConfig() !== null;
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim();
-  if (!apiKey || !from) {
+  const cfg = smtpConfig();
+  if (!cfg) {
     return { ok: false, error: "not_configured" };
   }
 
-  const resend = new Resend(apiKey);
-  const { data, error } = await resend.emails.send({
-    from,
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-    text: input.text,
-  });
+  try {
+    const transport = nodemailer.createTransport({
+      host: cfg.host,
+      port: cfg.port,
+      secure: cfg.secure,
+      auth: {
+        user: cfg.user,
+        pass: cfg.pass,
+      },
+    });
 
-  if (error || !data?.id) {
-    return {
-      ok: false,
-      error: "send_failed",
-      detail: error?.message ?? "El proveedor de correo no devolvió confirmación.",
-    };
+    const info = await transport.sendMail({
+      from: cfg.from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+    });
+
+    return { ok: true, id: info.messageId || "sent" };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error("[email] SMTP send failed", detail);
+    return { ok: false, error: "send_failed", detail };
   }
-
-  return { ok: true, id: data.id };
 }

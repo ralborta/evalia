@@ -73,7 +73,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         {
           error: "email_not_configured",
           message:
-            "El envío de correo no está configurado. Agregá RESEND_API_KEY y EMAIL_FROM en las variables de entorno.",
+            "El envío de correo no está configurado. Agregá SMTP_HOST, SMTP_USER, SMTP_PASS y EMAIL_FROM en las variables de entorno.",
         },
         { status: 503 },
       );
