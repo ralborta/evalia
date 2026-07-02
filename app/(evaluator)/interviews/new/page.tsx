@@ -2,19 +2,18 @@
 
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { InterviewAudience } from "@prisma/client";
+import { InterviewInvitationPanel } from "@/components/evaluator/interview-invitation-panel";
 import {
   Briefcase,
   CirclePlus,
   Clock,
   ExternalLink,
-  Eye,
   FileText,
   Mail,
   Phone,
@@ -79,6 +78,12 @@ export default function NewInterviewPage() {
   const [loading, setLoading] = useState(false);
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [createdInterviewId, setCreatedInterviewId] = useState<string | null>(null);
+  const [createdMeta, setCreatedMeta] = useState<{
+    candidateName: string;
+    candidateEmail: string | null;
+    jobTitle: string;
+    durationMinutes: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -116,6 +121,7 @@ export default function NewInterviewPage() {
     setError(null);
     setPublicUrl(null);
     setCreatedInterviewId(null);
+    setCreatedMeta(null);
     const body =
       mode === "agent"
         ? {
@@ -153,11 +159,12 @@ export default function NewInterviewPage() {
     }
     setPublicUrl(data.publicUrl as string);
     setCreatedInterviewId(data.interview?.id ?? null);
-  }
-
-  async function copyLink() {
-    if (!publicUrl) return;
-    await navigator.clipboard.writeText(publicUrl);
+    setCreatedMeta({
+      candidateName: (data.candidateName as string) ?? form.candidateName,
+      candidateEmail: (data.candidateEmail as string | null) ?? (form.candidateEmail || null),
+      jobTitle: (data.jobTitle as string) ?? form.jobTitle,
+      durationMinutes: (data.durationMinutes as number) ?? form.durationMinutes,
+    });
   }
 
   return (
@@ -364,8 +371,8 @@ export default function NewInterviewPage() {
             <CardContent className="space-y-3 pt-4">
               <SummaryRow
                 icon={Mail}
-                title="El candidato recibirá por email"
-                desc="Un enlace seguro para completar la conversación cuando le convenga."
+                title="Invitación por email"
+                desc="Después de crear la entrevista podés personalizar el asunto y enviar la invitación con un clic."
               />
               <SummaryRow
                 icon={Sparkles}
@@ -389,18 +396,9 @@ export default function NewInterviewPage() {
             <p className="text-sm font-semibold text-slate-900">¿Qué recibirá el candidato?</p>
             <p className="mt-2 flex items-start gap-2 text-sm leading-relaxed text-slate-600">
               <Mail className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-              Un correo con el enlace a la sala de voz (si cargás email) o el link para compartir por el canal que prefieras.
+              Al finalizar vas a poder enviar un correo con el logo de EvalIA y el enlace a la sala de voz, o copiar el
+              link para WhatsApp u otro canal.
             </p>
-            <button
-              type="button"
-              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700"
-              onClick={() => {
-                window.alert("Próximamente: vista previa del correo de invitación.");
-              }}
-            >
-              <Eye className="h-4 w-4" />
-              Ver ejemplo de email
-            </button>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-600 shadow-sm">
@@ -416,36 +414,15 @@ export default function NewInterviewPage() {
         </aside>
       </div>
 
-      {publicUrl ? (
-        <div className="mt-8 rounded-xl border border-blue-100 bg-blue-50/50 p-6 shadow-sm">
-          <p className="text-base font-bold text-slate-900">Enlace generado</p>
-          <p className="mt-3 break-all rounded-lg border border-white bg-white px-4 py-3 font-mono text-xs text-slate-800 shadow-inner">
-            {publicUrl}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" size="sm" className="font-semibold" onClick={() => void copyLink()}>
-              Copiar link
-            </Button>
-            <Button type="button" variant="outline" size="sm" className="font-semibold" asChild>
-              <a href={publicUrl} target="_blank" rel="noreferrer">
-                Abrir link
-              </a>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="font-semibold"
-              disabled={!createdInterviewId}
-              onClick={async () => {
-                if (!createdInterviewId) return;
-                await fetch(`/api/interviews/${createdInterviewId}/mark-sent`, { method: "POST" });
-              }}
-            >
-              Marcar enviado
-            </Button>
-          </div>
-        </div>
+      {publicUrl && createdInterviewId && createdMeta ? (
+        <InterviewInvitationPanel
+          interviewId={createdInterviewId}
+          publicUrl={publicUrl}
+          candidateName={createdMeta.candidateName}
+          candidateEmail={createdMeta.candidateEmail}
+          jobTitle={createdMeta.jobTitle}
+          durationMinutes={createdMeta.durationMinutes}
+        />
       ) : null}
     </div>
   );

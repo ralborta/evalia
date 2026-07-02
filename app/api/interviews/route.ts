@@ -130,8 +130,19 @@ export async function POST(req: Request) {
   });
 
   const appUrl = getAppBaseUrl();
+  const publicUrl = `${appUrl}/interview/${interview.publicToken}`;
+
+  const full = await prisma.interview.findUnique({
+    where: { id: interview.id },
+    include: { candidate: true, jobPosition: true },
+  });
+
   return NextResponse.json({
     interview,
-    publicUrl: `${appUrl}/interview/${interview.publicToken}`,
+    publicUrl,
+    candidateEmail: full?.candidate.email ?? null,
+    candidateName: full?.candidate.name ?? body.candidateName,
+    jobTitle: full?.jobPosition.title ?? body.jobTitle,
+    durationMinutes: interview.durationMinutes,
   });
 }
