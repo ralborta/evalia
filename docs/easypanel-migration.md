@@ -252,7 +252,7 @@ Tiempo estimado de indisponibilidad: **15â€“30 minutos** si el dump es del tamaÃ
 | Webhook 401 | `ELEVENLABS_WEBHOOK_SECRET` y cabecera de firma |
 | Build Prisma P1012 | `DATABASE_URL` placeholder solo en build; no hace falta DB real para `generate` |
 | Seed inesperado | confirmar `ALLOW_DEMO_SEED=false` y `DISABLE_DB_BOOTSTRAP=1` |
-| Imagen grande / falta Prisma | el runtime copia `.prisma` y `@prisma` |
+| Imagen grande / falta Prisma | standalone traza el client de pnpm; no copiar `node_modules/.prisma` |
 
 ## 15. Pruebas
 
