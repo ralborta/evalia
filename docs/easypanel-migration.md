@@ -260,16 +260,18 @@ Tabla actualizada durante la validación de staging. Ver informe final en el PR.
 
 | Prueba | Resultado |
 |--------|-----------|
-| Build Docker en EasyPanel | pendiente |
-| Contenedor web iniciado | pendiente |
-| Health 200 | pendiente |
-| Postgres interno, sin puerto público | `exposedPort=0` (salvo restore controlado) |
-| Reinicio sin pérdida de datos | pendiente |
-| HTTPS staging | pendiente |
-| Login / roles / listados | pendiente |
-| Flujo entrevista + webhook | pendiente (sin cambiar webhook de prod) |
-| Invitación SMTP con URL de staging | pendiente |
-| Backup restaurado y conteos | pendiente |
+| Build Docker en EasyPanel | Aprobado (commit `f415ed8`). El primer build falló por copia `.prisma`/pnpm y se corrigió. |
+| Contenedor web iniciado | Aprobado. Estado `healthy`, 1 réplica, no-root. |
+| Health 200 | Aprobado: `{"status":"ok","database":"connected"}`. Sin versiones ni URLs. |
+| Postgres interno, sin puerto público | Aprobado. `exposedPort=0` tras restore. pgweb/DbGate desactivados. |
+| Reinicio sin pérdida de datos | Aprobado. Conteos intactos tras `restart_service`. |
+| HTTPS staging | Aprobado. Let's Encrypt `*.wd75db.easypanel.host` (válido hasta 2026-11-23). |
+| Login / roles / listados | Aprobado. Cookie `__Secure-authjs.session-token`. Evaluador → `/dashboard`; agente → `/agent`; anónimo → `/login`. |
+| Detalle e informes existentes | Aprobado. Datos restaurados visibles (20 entrevistas origen + pruebas). |
+| Flujo entrevista + webhook | Parcial: enlace público 200; sesión ElevenLabs 200 con variables dinámicas; webhook sin firma 401; webhook firmado 200 `interview_not_found`. No se completó una conversación de voz ni se relanzó OpenAI (costo). Informes ya restaurados se ven. |
+| Invitación SMTP | Aprobado a cuenta de prueba controlada. Tras el fix de URL, `publicUrl` usa `*.easypanel.host` (no Vercel/Railway). El primer envío, antes del fix, pudo llevar `localhost`. |
+| Backup restaurado y conteos | Aprobado el restore desde dump Railway (conteos idénticos, 0 huérfanos). Backup EasyPanel diario ejecutado (`evalia/daily/2026-09-02T14:53:00.332Z.sql.gz`). No se sobrescribió staging con ese archivo. |
+| Logs sin secretos | Aprobado en runtime (`Ready` / listen). EasyPanel sí envía env como Docker build-arg (riesgo residual en logs de build). |
 
 ## 16. Seguridad corregida en esta rama
 
