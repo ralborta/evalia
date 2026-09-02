@@ -1,0 +1,74 @@
+# Referencia local / futura. EasyPanel usa servicios nativos (no este compose).
+# No levanta evalia-worker ni evalia-redis en esta migración.
+#
+#   docker compose up --build
+#
+# Más adelante se pueden descomentar redis y worker sin cambiar la app.
+
+services:
+  evalia-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: evalia
+    volumes:
+      - evalia-postgres-data:/var/lib/postgresql/data
+    # Sin puerto público por defecto. Para restore controlado: "5433:5432"
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d evalia"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evalia-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      evalia-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@evalia-postgres:5432/evalia?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-dev-only-change-me}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      ALLOW_DEMO_SEED: "false"
+      DISABLE_DB_BOOTSTRAP: "1"
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # evalia-redis:
+  #   image: redis:7-alpine
+  #   command: ["redis-server", "--save", "60", "1"]
+  #   volumes:
+  #     - evalia-redis-data:/data
+  #   expose:
+  #     - "6379"
+
+  # evalia-worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     - evalia-postgres
+  #     - evalia-redis
+  #   environment:
+  #     DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@evalia-postgres:5432/evalia?schema=public
+  #     REDIS_URL: redis://evalia-redis:6379
+  #   restart: unless-stopped
+
+volumes:
+  evalia-postgres-data:
+  # evalia-redis-data:

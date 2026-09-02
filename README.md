@@ -2,32 +2,59 @@
 
 MVP de entrevistas orales en inglés (motor de voz / conversación) + panel evaluador/agente + informes con IA.
 
-## Despliegue en **Railway** (app + Postgres)
+## Destino actual: EasyPanel (staging)
 
-El repo incluye [`railway.json`](./railway.json): en **cada deploy** Railway ejecuta **`pnpm run db:deploy`** (esquema Prisma + **seed** con usuarios demo, admin `admin@evalia.app` / `admin`, entrevistas de prueba, etc.) y luego arranca la app con **`pnpm start`**.
+La migración de infraestructura vive en la rama `infra/easypanel-migration`. Guía operativa:
 
-Además, al **arrancar** el servidor Next se ejecuta [`instrumentation.ts`](./instrumentation.ts): si la base **no tiene usuarios**, aplica el seed completo; si ya hay datos, **asegura** la contraseña del admin. Desactivar: `DISABLE_DB_BOOTSTRAP=1`.
+- [`docs/easypanel-migration.md`](./docs/easypanel-migration.md)
+
+Servicios EasyPanel:
+
+- `evalia-web` — Next.js 16 desde imagen GHCR (`ghcr.io/ralborta/evalia`, build en GitHub Actions)
+- `evalia-postgres` — PostgreSQL **17.11** con volumen persistente, sin puerto público
+
+Vercel y Railway **siguen activos** como producción y rollback hasta el corte aprobado.
+
+## Despliegue en **Railway** (app + Postgres) — rollback
+
+El repo incluye [`railway.json`](./railway.json). En cada deploy Railway ejecuta **`pnpm run db:deploy`**, que ahora aplica **solo el esquema** (`prisma db push`) y **no** ejecuta seed demo ni cambia contraseñas.
+
+El arranque de Next llama a [`instrumentation.ts`](./instrumentation.ts), que ya **no** crea usuarios demo ni resetea el admin. Seed demo: `ALLOW_DEMO_SEED=true`. Desactivar bootstrap: `DISABLE_DB_BOOTSTRAP=1`.
 
 1. Crea **PostgreSQL** en Railway y enlaza **`DATABASE_URL`** al servicio web (EvalIA).
-2. Variables obligatorias en el servicio **web**: `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_APP_URL` (URL pública `https://…` de **Railway**, sin `/` final).
-3. Haz **redeploy** (o push a `main`). No hace falta correr Prisma desde tu Mac.
+2. Variables obligatorias: `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_APP_URL` (URL pública `https://…`, sin `/` final).
+3. En producción define `ALLOW_DEMO_SEED=false` y `ELEVENLABS_WEBHOOK_SECRET`.
 
-Opcional (Vercel): mismas variables con la URL de Vercel si despliegas allí; `railway.json` solo afecta a Railway.
+Opcional (Vercel): mismas variables con la URL de Vercel; `railway.json` solo afecta a Railway.
 
-## Despliegue en **Vercel** (app) + **Railway** (solo Postgres)
+## Despliegue en **Vercel** (app) + **Railway** (solo Postgres) — rollback
 
-El repo incluye [`vercel.json`](./vercel.json): el **build** ejecuta [`scripts/vercel-build.sh`](./scripts/vercel-build.sh) vía `pnpm run build:vercel`. Si **`DATABASE_URL` está definida** en el entorno de build: `prisma generate` + **`db push`** + **`db seed`** + `next build`. Si **falta** (error típico P1012), el script usa un placeholder solo para `prisma generate` y **omite** push/seed para que el build no falle; en ese caso debes añadir la variable y redeployar, o ejecutar seed / `db:reset-admin` contra tu Postgres.
+El repo incluye [`vercel.json`](./vercel.json): el build ejecuta [`scripts/vercel-build.sh`](./scripts/vercel-build.sh). Genera Prisma Client y construye Next. **No** hace seed. `prisma db push` solo si `APPLY_SCHEMA_ON_BUILD=true`.
 
 **En el proyecto de Vercel → Settings → Environment Variables:**
 
 | Variable | Notas |
 |----------|--------|
-| `DATABASE_URL` | La misma cadena del Postgres en Railway. Marca **Production** y, si quieres preview builds, **Preview** también. En cada variable, activa **“Available at Build Time”** (o el equivalente en tu UI) para que exista durante `pnpm run build:vercel`, no solo en runtime. |
+| `DATABASE_URL` | Cadena de Postgres (Railway u origen actual). Production y, si aplica, Preview. Disponible en Build para `prisma generate`. |
 | `AUTH_SECRET` | Obligatorio (ej. `openssl rand -base64 48`). |
-| `NEXTAUTH_URL` | URL pública exacta, ej. `https://tu-app.vercel.app` (sin `/` final). En previews cada URL es distinta: puede fallar auth si no coincide. |
+| `NEXTAUTH_URL` | URL pública exacta, sin `/` final. |
 | `NEXT_PUBLIC_APP_URL` | Igual que `NEXTAUTH_URL` en producción. |
+| `ELEVENLABS_WEBHOOK_SECRET` | Obligatorio para aceptar webhooks firmados. |
+| `ALLOW_DEMO_SEED` | `false` en producción. |
 
-Tras guardar variables, **Redeploy** (Deployments → … → Redeploy).
+Tras guardar variables, **Redeploy**.
+
+## Docker / GHCR (EasyPanel / local)
+
+El build de producción ocurre en GitHub Actions y publica `ghcr.io/ralborta/evalia`. EasyPanel **no** debe construir el `Dockerfile` (inyectaría env de runtime como build-arg).
+
+```bash
+docker build -t evalia-web .
+docker run --rm -p 3000:3000 --env-file .env evalia-web
+# health: GET /api/health
+```
+
+Compose de referencia (web + postgres; redis/worker comentados): `docker-compose.yml`.
 
 ## Desarrollo local
 
@@ -41,10 +68,13 @@ pnpm dev
 Comandos útiles:
 
 ```bash
-pnpm db:push      # solo esquema
-pnpm db:seed      # solo datos demo
-pnpm db:deploy    # push + seed (lo mismo que en Railway pre-deploy)
-pnpm db:reset-admin  # solo admin admin@evalia.app / admin
+pnpm db:push           # solo esquema
+pnpm db:apply-schema   # generate + db push, sin seed
+pnpm db:seed           # requiere ALLOW_DEMO_SEED=true
+pnpm db:deploy         # solo esquema (seguro para Railway)
+pnpm db:deploy:demo    # esquema + seed demo explícito
+pnpm db:init-empty     # instalación vacía + un admin (INIT_ADMIN_*)
+pnpm db:reset-admin    # requiere ALLOW_ADMIN_PASSWORD_RESET=true y ADMIN_PASSWORD
 ```
 
 ## Más
