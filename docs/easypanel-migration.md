@@ -248,7 +248,7 @@ Indisponibilidad estimada: **15–30 min**.
 | Login / roles / listados | Aprobado (usuarios de prueba solo en staging). |
 | Backup GCS + restore real | Aprobado. Roundtrip `cmp` ok. Conteos idénticos en DB temporal. Staging intacto. |
 | Webhook secreto en 3 plataformas | Configurado. Sin mostrar valor. Sin redeploy de producción. |
-| Flujo entrevista E2E | Ver sección 15 / evidencia del hardening. |
+| Flujo entrevista E2E | Aprobado en staging (2026-09-02), entrevista `cmtk8wohw0003xxek5c237bsc`. Login EVALUATOR; sesión de voz 200 con `signedUrl` y variables dinámicas; `finish` → `pending_webhook`; webhook sin firma 401; webhook firmado 200; OpenAI `gpt-4o-mini` → informe COMPLETED (70, B1, 14 métricas, resumen visible, página 64 KB). No se mantuvo una llamada WebRTC larga (costo). |
 | Logs de **runtime** sin secretos | Aprobado. El riesgo de build-args queda eliminado al no construir en el VPS. |
 
 ## 15. Seguridad en esta rama
