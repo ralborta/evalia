@@ -20,7 +20,9 @@ RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
-ENV NEXT_PUBLIC_APP_URL="http://localhost:3000"
+# EasyPanel inyecta NEXT_PUBLIC_APP_URL como build-arg; no hardcodear localhost.
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 RUN pnpm exec prisma generate
 RUN pnpm exec next build
 
