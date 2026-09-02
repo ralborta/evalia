@@ -9,7 +9,10 @@ export async function GET() {
   }
 
   const interviews = await prisma.interview.findMany({
-    where: { candidate: { linkedUserId: session.user.id } },
+    where: {
+      organizationId: session.user.organizationId,
+      candidate: { linkedUserId: session.user.id },
+    },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {

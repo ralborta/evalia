@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import { fail } from "@/lib/api-response";
+import { requireInterviewInOrg } from "@/lib/require-org-interview";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
@@ -7,13 +8,10 @@ import { InterviewStatus } from "@prisma/client";
 export const runtime = "nodejs";
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user || (session.user.role !== "EVALUATOR" && session.user.role !== "ADMIN")) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-
+  try {
   const { id } = await ctx.params;
-  const interview = await prisma.interview.findUnique({
+  await requireInterviewInOrg(id);
+  const interview = await prisma.interview.findFirst({
     where: { id },
     include: { evaluation: { select: { id: true } } },
   });
@@ -39,4 +37,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
   revalidatePath("/dashboard");
 
   return NextResponse.json({ ok: true, interview: updated });
+  } catch (error) {
+    return fail(error);
+  }
 }

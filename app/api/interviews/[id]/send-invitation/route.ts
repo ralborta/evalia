@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import { fail } from "@/lib/api-response";
+import { requireInterviewInOrg } from "@/lib/require-org-interview";
 import { getAppBaseUrl } from "@/lib/app-url";
 import {
   buildInvitationEmailHtml,
@@ -18,12 +19,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user || (session.user.role !== "EVALUATOR" && session.user.role !== "ADMIN")) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-
+  try {
   const { id } = await ctx.params;
+  await requireInterviewInOrg(id);
   const json = await req.json().catch(() => ({}));
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
@@ -95,4 +93,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     subject,
     messageId: result.id,
   });
+  } catch (error) {
+    return fail(error);
+  }
 }

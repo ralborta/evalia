@@ -1,20 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireOrgContext } from "@/lib/org-context";
 import { ArrowLeft } from "lucide-react";
 import { getProfileUiMeta, themeClasses } from "@/lib/evaluation-profile-ui";
 import { cn } from "@/lib/utils";
 
 export default async function EvaluationProfileDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const profile = await prisma.evaluationProfile.findUnique({
-    where: { id },
+  const ctx = await requireOrgContext({ evaluator: true });
+  const profile = await prisma.evaluationProfile.findFirst({
+    where: { id, organizationId: ctx.organizationId },
     include: { _count: { select: { interviews: true } } },
   });
   if (!profile) notFound();
 
   const listIdx = (
-    await prisma.evaluationProfile.findMany({ orderBy: { name: "asc" }, select: { id: true } })
+    await prisma.evaluationProfile.findMany({
+      where: { organizationId: ctx.organizationId },
+      orderBy: { name: "asc" },
+      select: { id: true },
+    })
   ).findIndex((p) => p.id === id);
   const meta = getProfileUiMeta(profile.key, listIdx >= 0 ? listIdx : 0);
   const tc = themeClasses(meta.theme);

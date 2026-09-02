@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
+import { requireOrgContext } from "@/lib/org-context";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,8 +64,9 @@ function ReportPendingIllustration() {
 
 export default async function InterviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const interview = await prisma.interview.findUnique({
-    where: { id },
+  const ctx = await requireOrgContext({ evaluator: true });
+  const interview = await prisma.interview.findFirst({
+    where: { id, organizationId: ctx.organizationId },
     include: {
       candidate: true,
       jobPosition: true,

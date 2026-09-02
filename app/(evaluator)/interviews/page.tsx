@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { personInitials } from "@/lib/initials";
 import { InterviewsListClient } from "@/components/evaluator/interviews-list-client";
+import { requireOrgContext } from "@/lib/org-context";
 
 export default async function InterviewsListPage() {
+  const ctx = await requireOrgContext({ evaluator: true });
+  const orgWhere = { organizationId: ctx.organizationId };
   const [interviews, total, completed, linkSent, processing] = await Promise.all([
     prisma.interview.findMany({
+      where: orgWhere,
       orderBy: { createdAt: "desc" },
       take: 500,
       include: {
@@ -14,11 +18,11 @@ export default async function InterviewsListPage() {
         evaluation: true,
       },
     }),
-    prisma.interview.count(),
-    prisma.interview.count({ where: { status: "COMPLETED" } }),
-    prisma.interview.count({ where: { status: "LINK_READY" } }),
+    prisma.interview.count({ where: orgWhere }),
+    prisma.interview.count({ where: { ...orgWhere, status: "COMPLETED" } }),
+    prisma.interview.count({ where: { ...orgWhere, status: "LINK_READY" } }),
     prisma.interview.count({
-      where: { status: { in: ["PROCESSING", "IN_PROGRESS"] } },
+      where: { ...orgWhere, status: { in: ["PROCESSING", "IN_PROGRESS"] } },
     }),
   ]);
 

@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - infra/easypanel-migration
+      - feature/evalia-talent-foundation
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -49,6 +50,8 @@ jobs:
           tags: |
             type=sha,prefix=sha-,format=short
             type=raw,value=staging,enable=${{ github.ref == 'refs/heads/infra/easypanel-migration' }}
+            type=raw,value=talent-foundation,enable=${{ github.ref == 'refs/heads/feature/evalia-talent-foundation' }}
+            type=raw,value=talent-foundation-${{ github.sha }},enable=${{ github.ref == 'refs/heads/feature/evalia-talent-foundation' }}
             type=raw,value=${{ github.sha }}
 
       - name: Build and push

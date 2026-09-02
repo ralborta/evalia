@@ -16,6 +16,11 @@
     "db:deploy:demo": "prisma db push && ALLOW_DEMO_SEED=true tsx prisma/seed-cli.ts",
     "db:init-empty": "tsx scripts/init-empty-install.ts",
     "db:apply-schema": "sh scripts/apply-schema.sh",
+    "db:apply-talent": "tsx scripts/apply-talent-foundation.ts",
+    "db:seed-talent-staging": "tsx scripts/seed-talent-staging.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "import:conversation": "tsx scripts/import-conversation.ts",
     "postinstall": "prisma generate"
   },
@@ -56,7 +61,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   },
   "packageManager": "pnpm@9.12.0+sha512.4abf725084d7bcbafbd728bfc7bee61f2f791f977fd87542b3579dcb23504d170d46337945e4c66485cd12d588a0c0e570ed9c477e7ccdd8507cf05f3f92eaca",
   "prisma": {

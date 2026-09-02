@@ -10,6 +10,7 @@ import {
   BookOpen,
   Users,
   Settings,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const items: {
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/interviews/new", label: "Nueva evaluación", icon: PlusCircle },
   { href: "/interviews", label: "Entrevistas", icon: ClipboardList },
+  { href: "/jobs", label: "Vacantes", icon: Briefcase },
   { href: "/candidates", label: "Candidatos", icon: Users },
   { href: "/evaluation-profiles", label: "Perfiles", icon: BookOpen },
   { href: "/reports", label: "Reportes", icon: FileBarChart },

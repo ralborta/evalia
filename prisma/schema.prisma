@@ -1,4 +1,6 @@
-// EvalIA — esquema alineado al brief técnico + roles agente (A+B)
+// EvalIA — entrevistas de idioma + cimientos de EvalIA Talent
+// Los modelos JobPosition / EvaluationProfile / Interview se conservan.
+// Job / Application / Scorecard son el dominio Talent y no sustituyen a JobPosition.
 
 generator client {
   provider = "prisma-client-js"
@@ -15,6 +17,79 @@ enum UserRole {
   AGENT
 }
 
+enum OrgMemberRole {
+  OWNER
+  ADMIN
+  RECRUITER
+  VIEWER
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  PAUSED
+  CLOSED
+  ARCHIVED
+}
+
+enum ScorecardStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CriterionType {
+  SCORED
+  EXCLUDING
+}
+
+enum ApplicationSource {
+  MANUAL
+}
+
+enum AuditAction {
+  JOB_CREATED
+  JOB_UPDATED
+  SCORECARD_CREATED
+  SCORECARD_UPDATED
+  SCORECARD_PUBLISHED
+  APPLICATION_CREATED
+  APPLICATION_STAGE_MOVED
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members            OrganizationMember[]
+  candidates         Candidate[]
+  jobPositions       JobPosition[]
+  evaluationProfiles EvaluationProfile[]
+  interviews         Interview[]
+  jobs               Job[]
+  scorecards         Scorecard[]
+  applications       Application[]
+  pipelineStages     PipelineStage[]
+  auditLogs          AuditLog[]
+}
+
+model OrganizationMember {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrgMemberRole @default(RECRUITER)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -24,41 +99,62 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  linkedCandidate Candidate?
-  interviewsCreated Interview[] @relation("InterviewCreatedBy")
+  linkedCandidate   Candidate?
+  interviewsCreated Interview[]          @relation("InterviewCreatedBy")
+  memberships       OrganizationMember[]
+  auditLogs         AuditLog[]
+  jobsCreated       Job[]                @relation("JobCreatedBy")
+  scorecardsCreated Scorecard[]          @relation("ScorecardCreatedBy")
+  applicationsCreated Application[]      @relation("ApplicationCreatedBy")
+  stageMoves        ApplicationStageHistory[]
 }
 
 model Candidate {
-  id            String   @id @default(cuid())
-  name          String
-  email         String?
-  phone         String?
-  linkedUserId  String?  @unique
-  linkedUser    User?    @relation(fields: [linkedUserId], references: [id])
-  interviews    Interview[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  email          String?
+  phone          String?
+  linkedUserId   String?      @unique
+  linkedUser     User?        @relation(fields: [linkedUserId], references: [id])
+  interviews     Interview[]
+  applications   Application[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, email])
 }
 
 model JobPosition {
-  id          String        @id @default(cuid())
-  title       String
-  description String?
-  targetLevel EnglishLevel?
-  interviews  Interview[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  title          String
+  description    String?
+  targetLevel    EnglishLevel?
+  interviews     Interview[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
 }
 
 model EvaluationProfile {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  name        String
-  description String?
-  configJson  Json
-  interviews  Interview[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  key            String
+  name           String
+  description    String?
+  configJson     Json
+  interviews     Interview[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
 }
 
 enum InterviewAudience {
@@ -67,19 +163,21 @@ enum InterviewAudience {
 }
 
 model Interview {
-  id                       String              @id @default(cuid())
-  publicToken              String              @unique
-  audience                 InterviewAudience   @default(EXTERNAL_CANDIDATE)
+  id                       String            @id @default(cuid())
+  organizationId           String
+  organization             Organization      @relation(fields: [organizationId], references: [id])
+  publicToken              String            @unique
+  audience                 InterviewAudience @default(EXTERNAL_CANDIDATE)
   candidateId              String
-  candidate                Candidate           @relation(fields: [candidateId], references: [id])
+  candidate                Candidate         @relation(fields: [candidateId], references: [id])
   jobPositionId            String
-  jobPosition              JobPosition         @relation(fields: [jobPositionId], references: [id])
+  jobPosition              JobPosition       @relation(fields: [jobPositionId], references: [id])
   evaluationProfileId      String
-  evaluationProfile        EvaluationProfile   @relation(fields: [evaluationProfileId], references: [id])
+  evaluationProfile        EvaluationProfile @relation(fields: [evaluationProfileId], references: [id])
   createdById              String?
-  createdBy                User?               @relation("InterviewCreatedBy", fields: [createdById], references: [id])
-  status                   InterviewStatus     @default(CREATED)
-  durationMinutes          Int                 @default(8)
+  createdBy                User?             @relation("InterviewCreatedBy", fields: [createdById], references: [id])
+  status                   InterviewStatus   @default(CREATED)
+  durationMinutes          Int               @default(8)
   targetLevel              EnglishLevel?
   elevenlabsConversationId String?
   elevenlabsAgentId        String?
@@ -94,8 +192,10 @@ model Interview {
   expiresAt                DateTime?
   sentManuallyAt           DateTime?
   evaluation               Evaluation?
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  @@index([organizationId])
 }
 
 enum InterviewStatus {
@@ -166,4 +266,147 @@ model WebhookEvent {
   createdAt  DateTime @default(now())
 
   @@unique([provider, externalId])
+}
+
+model Job {
+  id                   String           @id @default(cuid())
+  organizationId       String
+  organization         Organization     @relation(fields: [organizationId], references: [id])
+  title                String
+  description          String?
+  status               JobStatus        @default(DRAFT)
+  location             String?
+  publishedScorecardId String?
+  publishedScorecard   Scorecard?       @relation("JobPublishedScorecard", fields: [publishedScorecardId], references: [id])
+  createdById          String?
+  createdBy            User?            @relation("JobCreatedBy", fields: [createdById], references: [id])
+  scorecards           Scorecard[]      @relation("JobScorecards")
+  stages               PipelineStage[]
+  applications         Application[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+}
+
+model Scorecard {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  jobId          String
+  job            Job             @relation("JobScorecards", fields: [jobId], references: [id], onDelete: Cascade)
+  familyId       String
+  version        Int             @default(1)
+  status         ScorecardStatus @default(DRAFT)
+  name           String
+  sourcePrompt   String?
+  createdById    String?
+  createdBy      User?           @relation("ScorecardCreatedBy", fields: [createdById], references: [id])
+  publishedAt    DateTime?
+  criteria       ScorecardCriterion[]
+  jobsUsing      Job[]           @relation("JobPublishedScorecard")
+  applications   Application[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([jobId, version])
+  @@index([organizationId, familyId])
+  @@index([organizationId, status])
+}
+
+model ScorecardCriterion {
+  id                String        @id @default(cuid())
+  scorecardId       String
+  scorecard         Scorecard     @relation(fields: [scorecardId], references: [id], onDelete: Cascade)
+  key               String
+  label             String
+  description       String
+  weight            Int           @default(0)
+  type              CriterionType @default(SCORED)
+  required          Boolean       @default(true)
+  evidenceRequired  Boolean       @default(false)
+  scoringRule       String
+  sortOrder         Int           @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([scorecardId, sortOrder])
+}
+
+model PipelineStage {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  jobId          String
+  job            Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  key            String
+  name           String
+  sortOrder      Int
+  isTerminal     Boolean       @default(false)
+  isRejected     Boolean       @default(false)
+  applications   Application[]
+  historyFrom    ApplicationStageHistory[] @relation("HistoryFromStage")
+  historyTo      ApplicationStageHistory[] @relation("HistoryToStage")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([jobId, key])
+  @@index([organizationId, jobId, sortOrder])
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  jobId          String
+  job            Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId    String
+  candidate      Candidate         @relation(fields: [candidateId], references: [id])
+  stageId        String
+  stage          PipelineStage     @relation(fields: [stageId], references: [id])
+  scorecardId    String?
+  scorecard      Scorecard?        @relation(fields: [scorecardId], references: [id])
+  source         ApplicationSource @default(MANUAL)
+  notes          String?
+  createdById    String?
+  createdBy      User?             @relation("ApplicationCreatedBy", fields: [createdById], references: [id])
+  history        ApplicationStageHistory[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([jobId, candidateId])
+  @@index([organizationId, jobId, stageId])
+  @@index([organizationId, candidateId])
+}
+
+model ApplicationStageHistory {
+  id            String        @id @default(cuid())
+  applicationId String
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStageId   String?
+  fromStage     PipelineStage? @relation("HistoryFromStage", fields: [fromStageId], references: [id])
+  toStageId     String
+  toStage       PipelineStage  @relation("HistoryToStage", fields: [toStageId], references: [id])
+  actorUserId   String?
+  actor         User?          @relation(fields: [actorUserId], references: [id])
+  note          String?
+  createdAt     DateTime       @default(now())
+
+  @@index([applicationId, createdAt])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actorUserId    String?
+  actor          User?        @relation(fields: [actorUserId], references: [id])
+  action         AuditAction
+  entityType     String
+  entityId       String
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
 }
