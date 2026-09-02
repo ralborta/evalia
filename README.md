@@ -10,8 +10,8 @@ La migración de infraestructura vive en la rama `infra/easypanel-migration`. Gu
 
 Servicios EasyPanel:
 
-- `evalia-web` — Next.js 16 en contenedor (Dockerfile multi-stage, `output: "standalone"`)
-- `evalia-postgres` — PostgreSQL 18 con volumen persistente, sin puerto público
+- `evalia-web` — Next.js 16 desde imagen GHCR (`ghcr.io/ralborta/evalia`, build en GitHub Actions)
+- `evalia-postgres` — PostgreSQL **17.11** con volumen persistente, sin puerto público
 
 Vercel y Railway **siguen activos** como producción y rollback hasta el corte aprobado.
 
@@ -44,7 +44,9 @@ El repo incluye [`vercel.json`](./vercel.json): el build ejecuta [`scripts/verce
 
 Tras guardar variables, **Redeploy**.
 
-## Docker (EasyPanel / local)
+## Docker / GHCR (EasyPanel / local)
+
+El build de producción ocurre en GitHub Actions y publica `ghcr.io/ralborta/evalia`. EasyPanel **no** debe construir el `Dockerfile` (inyectaría env de runtime como build-arg).
 
 ```bash
 docker build -t evalia-web .

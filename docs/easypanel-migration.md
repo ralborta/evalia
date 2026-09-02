@@ -4,7 +4,7 @@ Documento operativo de la migración de infraestructura. No incluye secretos ni 
 
 **Rama:** `infra/easypanel-migration`  
 **Corte de producción:** pendiente de aprobación explícita.  
-**Rollback:** Vercel + Railway permanecen intactos.
+**Rollback:** Vercel + Railway permanecen intactos. DNS de producción no se toca en esta fase.
 
 ## 1. Arquitectura
 
@@ -14,25 +14,24 @@ Documento operativo de la migración de infraestructura. No incluye secretos ni 
               EasyPanel proxy
                       │
                  evalia-web
-              (Next.js 16, standalone)
-                      │  red interna
-                 evalia-postgres
-              (PostgreSQL 18, volumen)
+         (imagen GHCR, Next.js 16 standalone)
+                      │
+        ┌─────────────┴──────────────┐
+        │ ventana 1 (recomendada)    │  ventana 2 (independiente)
+        │ Railway Postgres 18.6      │  evalia-postgres 17.11
+        └────────────────────────────┘
 ```
 
-Preparados para una fase posterior, **no desplegados**:
-
-- `evalia-redis`
-- `evalia-worker`
-
-Ver `docker-compose.yml` (servicios comentados).
+Preparados para una fase posterior, **no desplegados**: `evalia-redis`, `evalia-worker`.
 
 ### Servicios EasyPanel (proyecto `evalia`)
 
 | Servicio | Rol | Persistencia | Exposición |
 |----------|-----|--------------|------------|
-| `evalia-web` | App Next.js | ninguna | HTTPS (dominio staging) |
-| `evalia-postgres` | PostgreSQL 18 | volumen Docker | solo red interna |
+| `evalia-web` | App Next.js desde `ghcr.io/ralborta/evalia` | ninguna | HTTPS staging |
+| `evalia-postgres` | PostgreSQL **17.11** (`postgres:17`) | volumen Docker | solo red interna |
+
+Staging **no** usa PostgreSQL 18. El origen productivo (Railway) sí es 18.6. El restore 18 → 17 ya se validó.
 
 Vercel (app) y Railway (app + Postgres) siguen siendo el entorno productivo actual.
 
@@ -40,12 +39,13 @@ Vercel (app) y Railway (app + Postgres) siguen siendo el entorno productivo actu
 
 | Tema | Estado real | Decisión |
 |------|-------------|----------|
-| Migraciones Prisma | No hay carpeta `prisma/migrations`. El proyecto usa `prisma db push`. | Se mantiene `db push` no destructivo. No se introduce Prisma Migrate en esta oleada. |
-| Seed / bootstrap | `instrumentation` + `db:deploy` sembraban demo y **reseteaban** `admin@evalia.app` / `admin`. | Arranque normal: sin seed y sin cambio de contraseñas. Seed solo con `ALLOW_DEMO_SEED=true`. |
-| Next.js `output` | Next.js 16 documenta `output: "standalone"`. | Habilitado. Compatible con App Router, sin custom server. |
-| Firma webhook | Si faltaba `ELEVENLABS_WEBHOOK_SECRET`, se aceptaba cualquier POST. | Ahora se rechaza. Override local: `ALLOW_UNSIGNED_ELEVENLABS_WEBHOOK=true`. |
-| Backups EasyPanel | Solo existe storage **Local Disk**. | Backup diario local + copia verificada fuera del VPS. S3/R2 pendiente de credenciales. |
-| Versión Postgres origen | Railway está en **18.6**. | Staging usa `postgres:18` para poder restaurar. |
+| Build | EasyPanel inyectaba **todas** las env como Docker `--build-arg` (secretos en logs). | Build en GitHub Actions → GHCR. EasyPanel solo hace `pull` + runtime env. |
+| Secretos en imagen | `NEXT_PUBLIC_*` se inlinéa en el bundle. | La imagen se construye **sin** URL ni secretos. `getAppBaseUrl()` usa `AUTH_URL` / `NEXTAUTH_URL` / `NEXT_PUBLIC_APP_URL` de runtime. |
+| Migraciones Prisma | No hay `prisma/migrations`. | Se mantiene `db push` no destructivo. |
+| Seed / bootstrap | Antes reseteaba `admin@evalia.app`. | Arranque normal: sin seed ni cambio de contraseñas. |
+| Firma webhook | Sin secreto se aceptaba cualquier POST. | Fail-closed. Mismo `ELEVENLABS_WEBHOOK_SECRET` en EasyPanel, Vercel y Railway. |
+| Backups | Local Disk en el VPS. Railway bucket no disponible (trial). | Disco local + **GCS S3-interop** (`evalia-backups-2026`, región `southamerica-east1`). |
+| Postgres staging | Intentos con `postgres:18` no arrancaron en este VPS. | Staging queda en **17.11**. Origen Railway: 18.6. |
 
 ## 3. Variables
 
@@ -58,61 +58,56 @@ Inventario en `.env.example`. Ningún valor real se versiona.
 - `NEXTAUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
 
-### Obligatorias para el producto (voz / IA / correo)
+### Obligatorias para el producto
 
-- `ELEVENLABS_API_KEY`
-- `ELEVENLABS_AGENT_ID`
-- `ELEVENLABS_WEBHOOK_SECRET`
+- `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `ELEVENLABS_WEBHOOK_SECRET`
 - `OPENAI_API_KEY`
 - SMTP: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`
 
 ### Opcionales
 
-- `NEXTAUTH_SECRET` (fallback, mismo valor que `AUTH_SECRET`)
-- `AUTH_URL` (alias de URL pública)
-- `OPENAI_EVAL_MODEL` (default `gpt-4o-mini`)
-- `ALLOW_DEMO_SEED` (producción/staging: `false`)
-- `DISABLE_DB_BOOTSTRAP` (producción/staging: `1`)
+- `NEXTAUTH_SECRET`, `AUTH_URL`, `OPENAI_EVAL_MODEL` (`gpt-4o-mini`)
+- `ALLOW_DEMO_SEED=false`, `DISABLE_DB_BOOTSTRAP=1`
 - `ALLOW_UNSIGNED_ELEVENLABS_WEBHOOK` (solo local)
-- `ALLOW_ADMIN_PASSWORD_RESET` + `ADMIN_PASSWORD` (manual)
-- `INIT_ADMIN_EMAIL` / `INIT_ADMIN_PASSWORD` (instalación vacía)
-- `APPLY_SCHEMA_ON_BUILD` (Vercel; default no)
-- `PORT`, `HOSTNAME`, `NODE_ENV`
 
-### Inconsistencias detectadas
+### Dónde está el secreto del webhook (sin valores)
 
-- `AUTH_SECRET` es canónico; `NEXTAUTH_SECRET` es legado.
-- `NEXT_PUBLIC_APP_URL`, `NEXTAUTH_URL` y `AUTH_URL` deben apuntar al mismo origen.
-- `getAppBaseUrl()` aún infiere `VERCEL_URL` / `RAILWAY_PUBLIC_DOMAIN` como fallback de rollback.
+| Destino | Estado | ¿Redeploy? |
+|---------|--------|------------|
+| EasyPanel `evalia-web` | configurado (runtime) | no hace falta para el secreto |
+| Vercel `evalia` Production + Preview | configurado | **no** se disparó redeploy |
+| Railway servicio `evalia` | configurado | `skipDeploys=true` (aplica en el próximo deploy) |
 
-Staging debe usar el dominio EasyPanel, no `*.vercel.app` ni `*.up.railway.app`.
+Producción actual en `main` solo verifica la firma **si** el secreto está presente. El secreto ya está cargado; ElevenLabs debe firmar con el **mismo** valor en el corte (no se cambia la URL del webhook ahora).
 
-## 4. Build
+## 4. Build (GitHub Actions → GHCR)
 
-Imagen multi-stage (`Dockerfile`):
+El `Dockerfile` aborta si alguien pasa credenciales de runtime como build-arg (`AUTH_SECRET`, API keys, `DATABASE_URL` real, SMTP, etc.).
 
-1. **deps** — `pnpm@9.12.0` + `pnpm install --frozen-lockfile`
-2. **builder** — `prisma generate` + `next build` (`output: "standalone"`)
-3. **runtime** — usuario `nextjs` (uid 1001), `node server.js`, `HOSTNAME=0.0.0.0`, puerto 3000
+Flujo:
 
-No se copian `.env`, `node_modules` de desarrollo ni secretos.
+1. Push a `infra/easypanel-migration` (o `workflow_dispatch`).
+2. `.github/workflows/publish-image.yml` construye en `ubuntu-latest`.
+3. Publica `ghcr.io/ralborta/evalia:sha-<corto>`, `:staging` y `:<sha>`.
+4. Si existe el secret `EASYPANEL_DEPLOY_URL`, dispara el pull en EasyPanel.
 
 ```bash
+# local, sin secretos
 docker build -t evalia-web .
+docker run --rm -p 3000:3000 --env-file .env evalia-web
 ```
 
 Healthcheck de imagen: `GET /api/health`.
 
 ## 5. Deploy
 
-1. Push a `infra/easypanel-migration`.
-2. EasyPanel `evalia-web` construye desde GitHub (`ralborta/evalia`, Dockerfile).
-3. Auto-deploy **solo** desde esa rama mientras se valida.
-4. `main` no apunta al nuevo entorno.
-5. Un build fallido no sustituye la revisión saludable (`zeroDowntime: true`, 1 réplica).
-6. Rollback: redeploy del commit anterior o cambio de `ref`.
+1. EasyPanel `evalia-web` usa **source = image** (`ghcr.io/ralborta/evalia:staging`).
+2. Auto-deploy de GitHub en EasyPanel: **desactivado** (evita rebuild con build-args).
+3. `main` no apunta a EasyPanel.
+4. `zeroDowntime: true`, 1 réplica.
+5. Rollback de app: pin de un digest/tag anterior en EasyPanel, sin reconstruir.
 
-Aplicar esquema (una sola vez, no desde varias réplicas):
+Aplicar esquema (una sola vez):
 
 ```bash
 DATABASE_URL="postgresql://..." pnpm db:apply-schema
@@ -120,167 +115,149 @@ DATABASE_URL="postgresql://..." pnpm db:apply-schema
 
 No ejecutar `prisma migrate reset`. No seed automático.
 
-Instalación vacía (no usar en esta migración; la base se restaura):
+## 6. Base de datos
 
-```bash
-INIT_ADMIN_EMAIL="..." INIT_ADMIN_PASSWORD="..." pnpm db:init-empty
-```
+| Entorno | Motor | Notas |
+|---------|-------|--------|
+| Producción actual | Railway PostgreSQL **18.6** | No apagar. Destino de la ventana 1. |
+| Staging EasyPanel | `evalia-postgres` **17.11** | Copia restaurada. `exposedPort=0`. |
+| Destino ventana 2 | EasyPanel Postgres | Restaurar dump final; no overwrite sin backup verificado. |
 
-## 6. Migración de base
+Conectividad ventana 1: desde `evalia-web` el proxy Railway (`yamanote.proxy.rlwy.net:41243`) es **alcanzable por TCP**.
 
-Origen: Railway Postgres 18.6 (`yamanote.proxy.rlwy.net`, base `railway`).  
-Destino: EasyPanel `evalia-postgres` (imagen `postgres:18`, DB `evalia`, `exposedPort=0`).
+Conteos Railway origen (2026-09-02): User 3, Candidate 20, JobPosition 14, EvaluationProfile 4, Interview 20, Evaluation 13, EvaluationMetric 171, WebhookEvent 0.
 
-Procedimiento:
-
-1. `pg_dump --no-owner --no-acl -Fc` desde el origen (cliente ≥ 18).
-2. Verificar tamaño > 0 y `pg_restore -l`.
-3. Restaurar en staging.
-4. Comparar conteos (sin PII).
-5. Quitar cualquier puerto público temporal.
-
-Conteos de origen (2026-09-02, Railway):
-
-| Entidad | Conteo |
-|---------|--------|
-| User | 3 |
-| Candidate | 20 |
-| JobPosition | 14 |
-| EvaluationProfile | 4 |
-| Interview | 20 |
-| Evaluation | 13 |
-| EvaluationMetric | 171 |
-| WebhookEvent | 0 |
+Conteos staging al hardening (2026-09-02): User 5, Candidate 22, JobPosition 15, EvaluationProfile 4, Interview 22, Evaluation 13 (origen + usuarios/entrevistas de prueba).
 
 ## 7. Backups
 
-### Copia verificada fuera del VPS
+### Externo (GCS, API S3)
 
-El dump de origen se guarda en `backups/` (gitignored) en la estación de trabajo. Esa copia **no** vive en el VPS de EasyPanel.
+- Proyecto GCP: `evalia-backups-2026`
+- Bucket: `evalia-backups-2026` (región `southamerica-east1`)
+- Acceso: HMAC de service account (S3-interop). Credenciales **fuera del repo**.
+- Helper: `scripts/s3-compat-put.py`
 
-### EasyPanel
+Prueba real (2026-09-02):
 
-- Storage conectado hoy: **Local Disk** (`/etc/easypanel/backups`).
-- Programar backup diario de `evalia` con retención ≥ 7.
-- Semanal adicional cuando el schedule esté activo.
-- **Pendiente:** proveedor S3/R2/B2. Sin credenciales en este entorno no se puede crear `createS3Provider`.
+1. `pg_dump -Fc` de staging (58 941 bytes, TOC 57).
+2. PUT a `evalia/staging/evalia-staging-20260902T151600Z.dump`.
+3. GET y `cmp` idéntico.
+4. Restore en un Postgres temporal EasyPanel `evalia-pg-restore-test` (17.11).
+5. Conteos idénticos: User 5, Candidate 22, JobPosition 15, EvaluationProfile 4, Interview 22, Evaluation 13, EvaluationMetric 171, WebhookEvent 1.
+6. Puerto temporal cerrado. Servicio de prueba **destruido**. Staging no se sobrescribió.
 
-### Restauración
+EasyPanel `createS3Provider` contra GCS HMAC falló (`Could not connect`: rclone provider Other / `SignatureDoesNotMatch`). Por eso el off-site usa el helper S3, no el schedule nativo de EasyPanel.
 
-```bash
-# custom format
-pg_restore --no-owner --no-acl --dbname="$DATABASE_URL" evalia.dump
-```
+### Local VPS (EasyPanel)
 
-En EasyPanel: `restoreDatabaseBackup` (storage provider + path).
-
-Una restauración no es válida hasta que los conteos coincidan y `GET /api/health` sea 200.
+- Storage: Local Disk `/etc/easypanel/backups`
+- Diario `0 3 * * *` retención 7 (`evalia/daily`)
+- Semanal `0 4 * * 0` retención 4 (`evalia/weekly`)
 
 ## 8. Health checks
 
-`GET /api/health` (sin autenticación):
+`GET /api/health`: `{ "status": "ok", "database": "connected" }` — 200 / 503. Sin versiones, URLs ni credenciales.
 
-```json
-{ "status": "ok", "database": "connected" }
-```
-
-- 200 si `SELECT 1` responde.
-- 503 si la base no está disponible.
-- No revela versiones, URLs ni credenciales.
-
-El `Dockerfile` declara `HEALTHCHECK` contra ese endpoint. EasyPanel no expone un campo de health HTTP aparte en `updateAppDeploy`; se usa el healthcheck de la imagen.
-
-## 9. Logs y observabilidad
-
-- Logs de app y deploy: panel EasyPanel → `evalia-web`.
-- Reinicio automático: política del servicio (`restart` / enable).
-- Límites recomendados (VPS 2 CPU / 8 GB, compartido):
-  - `evalia-web`: 1 CPU / 1024 MB
-  - `evalia-postgres`: 0.5 CPU / 768 MB
-- Alertas nativas de EasyPanel: disco, servicio caído, backup (si el schedule está activo).
-- **Sentry:** no está en el repo. Incorporarlo después del corte; no bloquea la migración.
-
-## 10. Staging vs producción
+## 9. Staging vs producción
 
 | | Staging EasyPanel | Producción actual |
 |--|-------------------|-------------------|
-| App | `evalia-web` | Vercel `evalia` + Railway `evalia` |
-| DB | `evalia-postgres` (copia restaurada) | Railway Postgres 18.6 |
-| URLs | dominio `*.wd75db.easypanel.host` | `evalia.nivel41.com`, `evalia.gsbworld.com` |
-| Webhook ElevenLabs | no se cambia | sigue apuntando a Vercel |
-| Seed | `ALLOW_DEMO_SEED=false` | no tocar hasta el corte |
-| Auto-deploy | rama de migración | `main` → Vercel |
+| App | `evalia-web` (imagen GHCR) | Vercel `evalia` + Railway `evalia` |
+| DB | `evalia-postgres` 17.11 | Railway Postgres 18.6 |
+| URLs | `https://evalia-evalia-web.wd75db.easypanel.host` | `evalia.nivel41.com`, `evalia.gsbworld.com` |
+| Webhook ElevenLabs | no se cambia | sigue en Vercel |
+| Seed | `ALLOW_DEMO_SEED=false` | no tocar |
+| Auto-deploy | GHA → GHCR → pull | `main` → Vercel |
 
-## 11. Rollback
+## 10. Rollback
 
-1. DNS de producción permanece en Vercel. No se modifica hasta aprobación.
+1. DNS de producción permanece en Vercel hasta aprobación.
 2. Webhook ElevenLabs permanece en la URL actual.
 3. Railway Postgres no se apaga.
-4. Si el corte ya ocurrió: revertir DNS, reponer webhook, mantener Vercel/Railway.
-5. Datos creados solo en EasyPanel durante el corte se concilian por `id`/`createdAt` (conteos, no PII).
-6. Periodo de observación recomendado: **14 días** antes de retirar Vercel/Railway.
+4. Si ya ocurrió la ventana 1: revertir DNS (y `DATABASE_URL` si se cambió). Vercel/Railway siguen vivos.
+5. Periodo de observación: **14 días** por ventana antes de retirar el origen.
 
-## 12. Plan de corte (no ejecutar sin aprobación)
+## 11. Plan de corte revisado (dos ventanas)
 
-1. Backup final de Railway (custom format, verificado).
-2. Poner el origen en mantenimiento breve (o freeze de escrituras).
-3. Restaurar copia final en `evalia-postgres`.
-4. Validar conteos + `/api/health`.
-5. Actualizar `NEXTAUTH_URL` / `NEXT_PUBLIC_APP_URL` al dominio productivo.
-6. Cambiar DNS.
-7. Cambiar webhook ElevenLabs a `https://<prod>/api/webhooks/elevenlabs/post-call`.
-8. Observar. No borrar Vercel/Railway.
+No ejecutar sin aprobación. **No mezclar** el corte de app y el de base.
 
-Tiempo estimado de indisponibilidad: **15–30 minutos** si el dump es del tamaño actual.
+### Ventana 1 — solo `evalia-web` (Postgres sigue en Railway)
 
-## 13. Operaciones habituales
+Objetivo: servir la app desde EasyPanel con la **misma** base productiva.
 
-- Redeploy staging: push a `infra/easypanel-migration` o Deploy en el panel.
-- Aplicar esquema: `pnpm db:apply-schema` (una réplica / un operador).
-- Seed demo: **nunca** en staging/prod.
-- Reset admin: `ALLOW_ADMIN_PASSWORD_RESET=true ADMIN_PASSWORD=... pnpm db:reset-admin`.
-- Logs: panel EasyPanel.
-- Backup manual: `runDatabaseBackup` o `pg_dump` hacia un destino externo.
+1. Backup verificado de Railway (custom format) + copia a GCS.
+2. En `evalia-web`: `DATABASE_URL` = cadena pública/proxy de Railway (no la interna de EasyPanel).
+3. `NEXTAUTH_URL` / `AUTH_URL` / `NEXT_PUBLIC_APP_URL` = dominios productivos.
+4. Health 200 contra Railway. Login y un listado de entrevistas.
+5. Cambiar DNS de `evalia.nivel41.com` y `evalia.gsbworld.com` al proxy EasyPanel.
+6. Webhook ElevenLabs **puede quedarse en Vercel** mientras Vercel y EasyPanel compartan Railway (misma DB). Cambiarlo a EasyPanel solo cuando la app productiva sea EasyPanel de forma estable.
+7. Observar. Vercel queda como rollback de app (revertir DNS).
 
-## 14. Solución de problemas
+Indisponibilidad estimada: **5–15 min** (DNS + smoke). Sin restore de base.
+
+### Ventana 2 — solo PostgreSQL (app ya en EasyPanel)
+
+Objetivo: mover datos a `evalia-postgres` sin volver a tocar el código.
+
+1. Backup final Railway + GCS. Freeze de escrituras (mantenimiento breve).
+2. Restore a `evalia-postgres` (hoy 17.11; upgrade a 18 es opcional y aparte).
+3. Conteos + `/api/health`.
+4. Cambiar `DATABASE_URL` de `evalia-web` al host interno `evalia-postgres:5432/evalia`.
+5. Redeploy/restart de la imagen (sin rebuild).
+6. Observar 14 días. Railway Postgres no se borra.
+
+Indisponibilidad estimada: **15–30 min**.
+
+### Lo que no se hace en ninguna ventana sin OK
+
+- Apagar Vercel o Railway.
+- `prisma migrate reset` / seed demo.
+- Sobrescribir una DB sin dump verificado.
+- Cambiar DNS “de paso” mientras se restaura la base.
+
+## 12. Operaciones habituales
+
+- Nueva imagen staging: push a `infra/easypanel-migration` (GHA) o `workflow_dispatch`.
+- Aplicar esquema: `pnpm db:apply-schema`.
+- Seed demo: nunca en staging/prod.
+- Backup off-site: `pg_dump -Fc` + `scripts/s3-compat-put.py put …`.
+- Restore de prueba: **nunca** sobre staging/prod; usar un Postgres temporal.
+
+## 13. Solución de problemas
 
 | Síntoma | Qué revisar |
 |---------|-------------|
-| `/api/health` 503 | `DATABASE_URL` interno (`evalia-postgres:5432/evalia`), contenedor Postgres up |
+| `/api/health` 503 | `DATABASE_URL` (interno o Railway según la ventana), contenedor Postgres |
 | Login no redirige | `NEXTAUTH_URL` / `AUTH_SECRET` / HTTPS |
-| Links de entrevista con host Vercel | `NEXT_PUBLIC_APP_URL` mal configurada |
-| Webhook 401 | `ELEVENLABS_WEBHOOK_SECRET` y cabecera de firma |
-| Build Prisma P1012 | `DATABASE_URL` placeholder solo en build; no hace falta DB real para `generate` |
-| Seed inesperado | confirmar `ALLOW_DEMO_SEED=false` y `DISABLE_DB_BOOTSTRAP=1` |
-| Imagen grande / falta Prisma | standalone traza el client de pnpm; no copiar `node_modules/.prisma` |
+| Links con host Vercel | `AUTH_URL` / `NEXTAUTH_URL` de runtime |
+| Webhook 401 | secreto cargado **y** firma ElevenLabs con el mismo valor |
+| EasyPanel rebuild con secretos | source debe ser **image**, no Dockerfile |
+| Build local aborta | el Dockerfile rechaza build-args de runtime; es intencional |
+| `createS3Provider` Could not connect | GCS HMAC + rclone Other; usar el helper S3 |
 
-## 15. Pruebas
-
-Tabla actualizada durante la validación de staging. Ver informe final en el PR.
+## 14. Pruebas
 
 | Prueba | Resultado |
 |--------|-----------|
-| Build Docker en EasyPanel | Aprobado (commit `f415ed8`). El primer build falló por copia `.prisma`/pnpm y se corrigió. |
-| Contenedor web iniciado | Aprobado. Estado `healthy`, 1 réplica, no-root. |
-| Health 200 | Aprobado: `{"status":"ok","database":"connected"}`. Sin versiones ni URLs. |
-| Postgres interno, sin puerto público | Aprobado. `exposedPort=0` tras restore. pgweb/DbGate desactivados. |
-| Reinicio sin pérdida de datos | Aprobado. Conteos intactos tras `restart_service`. |
-| HTTPS staging | Aprobado. Let's Encrypt `*.wd75db.easypanel.host` (válido hasta 2026-11-23). |
-| Login / roles / listados | Aprobado. Cookie `__Secure-authjs.session-token`. Evaluador → `/dashboard`; agente → `/agent`; anónimo → `/login`. |
-| Detalle e informes existentes | Aprobado. Datos restaurados visibles (20 entrevistas origen + pruebas). |
-| Flujo entrevista + webhook | Parcial: enlace público 200; sesión ElevenLabs 200 con variables dinámicas; webhook sin firma 401; webhook firmado 200 `interview_not_found`. No se completó una conversación de voz ni se relanzó OpenAI (costo). Informes ya restaurados se ven. |
-| Invitación SMTP | Aprobado a cuenta de prueba controlada. Tras el fix de URL, `publicUrl` usa `*.easypanel.host` (no Vercel/Railway). El primer envío, antes del fix, pudo llevar `localhost`. |
-| Backup restaurado y conteos | Aprobado el restore desde dump Railway (conteos idénticos, 0 huérfanos). Backup EasyPanel diario ejecutado (`evalia/daily/2026-09-02T14:53:00.332Z.sql.gz`). No se sobrescribió staging con ese archivo. |
-| Logs sin secretos | Aprobado en runtime (`Ready` / listen). EasyPanel sí envía env como Docker build-arg (riesgo residual en logs de build). |
+| Build sin secretos (GHA/GHCR) | Pipeline en `.github/workflows/publish-image.yml`. Dockerfile fail-closed. |
+| EasyPanel ya no construye el Dockerfile | Auto-deploy GitHub desactivado; source objetivo = imagen GHCR. |
+| Health 200 | Aprobado en staging. |
+| Postgres 17.11 | `SHOW server_version` = `17.11 (Debian 17.11-1.pgdg13+2)`. |
+| TCP EasyPanel → Railway Postgres | Aprobado (`yamanote.proxy.rlwy.net:41243`). |
+| Login / roles / listados | Aprobado (usuarios de prueba solo en staging). |
+| Backup GCS + restore real | Aprobado. Roundtrip `cmp` ok. Conteos idénticos en DB temporal. Staging intacto. |
+| Webhook secreto en 3 plataformas | Configurado. Sin mostrar valor. Sin redeploy de producción. |
+| Flujo entrevista E2E | Ver sección 15 / evidencia del hardening. |
+| Logs de **runtime** sin secretos | Aprobado. El riesgo de build-args queda eliminado al no construir en el VPS. |
 
-## 16. Seguridad corregida en esta rama
+## 15. Seguridad en esta rama
 
-- El arranque ya no fuerza la contraseña `admin`.
-- El seed demo es explícito.
-- El webhook no se acepta sin secreto.
-- Tokens públicos: `randomBytes(24)` en base64url (192 bits).
-- Contenedor web no-root.
-- Headers: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: SAMEORIGIN`, `Permissions-Policy` (micrófono permitido en `self` por ElevenLabs).
-- `/api/health` no filtra datos sensibles.
-- Postgres staging sin exposición pública.
-- pgweb/DbGate desactivados en `evalia-postgres`.
+- Arranque sin reset de `admin`.
+- Seed demo explícito.
+- Webhook fail-closed.
+- Imagen construida fuera del VPS; runtime secrets solo en el panel.
+- Tokens públicos: `randomBytes(24)` base64url.
+- Contenedor no-root + headers (`nosniff`, referrer, SAMEORIGIN, micrófono `self`).
+- Postgres staging sin puerto público (salvo ventanas de dump/restore, luego `exposedPort=0`).
+- Backup off-site en GCS, independiente del disco del VPS.
