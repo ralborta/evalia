@@ -1,7 +1,7 @@
 /**
  * URL base pública de la app (links de entrevista, redirects).
- * Producción: define NEXT_PUBLIC_APP_URL en Vercel/Railway (https://… sin / final).
- * Si falta, se infiere de VERCEL_URL (Vercel) o RAILWAY_PUBLIC_DOMAIN (Railway).
+ * Define NEXT_PUBLIC_APP_URL (https://… sin / final) en EasyPanel, Vercel o Railway.
+ * Si falta, se infiere de VERCEL_URL o RAILWAY_PUBLIC_DOMAIN (rollback).
  */
 export function getAppBaseUrl(): string {
   const explicit =

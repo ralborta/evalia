@@ -12,8 +12,12 @@ import { prisma } from "../lib/prisma";
 const SEED_TOKEN_COMPLETED = "seed00000000000000000001completed";
 const SEED_TOKEN_AGENT = "seed00000000000000000002agentlnk";
 
-/** Seed idempotente (upserts). Usado por CLI, Railway pre-deploy y bootstrap en runtime. */
+/** Seed idempotente de datos demo. Solo debe llamarse con ALLOW_DEMO_SEED=true. */
 export async function runSeed() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("runSeed() requiere ALLOW_DEMO_SEED=true");
+  }
+
   const passwordDemo = await bcrypt.hash("demo12345", 10);
   const passwordAdmin = await bcrypt.hash("admin", 10);
 

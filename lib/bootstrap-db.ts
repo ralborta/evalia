@@ -1,56 +1,52 @@
-import bcrypt from "bcryptjs";
-import { UserRole } from "@prisma/client";
 import { prisma } from "./prisma";
 
 let bootstrapOnce: Promise<void> | null = null;
 
+function demoSeedEnabled(): boolean {
+  return process.env.ALLOW_DEMO_SEED === "true";
+}
+
+function bootstrapDisabled(): boolean {
+  return process.env.DISABLE_DB_BOOTSTRAP === "1" || process.env.DISABLE_DB_BOOTSTRAP === "true";
+}
+
 /**
- * Garantiza una sola ejecución en paralelo por instancia (p. ej. serverless en Vercel).
- * Útil antes de login: el hook `instrumentation` no siempre corre antes de la primera petición a `/api/auth`.
+ * Una sola ejecución por instancia. En producción no crea usuarios ni cambia contraseñas.
+ * El seed demo solo corre si ALLOW_DEMO_SEED=true y la tabla User está vacía.
  */
 export function ensureDatabaseBootstrapped(): Promise<void> {
-  if (process.env.DISABLE_DB_BOOTSTRAP === "1") return Promise.resolve();
+  if (bootstrapDisabled()) return Promise.resolve();
   bootstrapOnce ??= bootstrapDatabaseIfNeeded();
   return bootstrapOnce;
 }
 
-/**
- * En el primer arranque del servidor (Railway/Vercel), si la BD está vacía aplica el seed completo.
- * Si ya hay usuarios, solo asegura admin@evalia.app / admin (por si el pre-deploy no corrió).
- * Desactivar: DISABLE_DB_BOOTSTRAP=1
- */
 export async function bootstrapDatabaseIfNeeded(): Promise<void> {
-  if (process.env.DISABLE_DB_BOOTSTRAP === "1") return;
+  if (bootstrapDisabled()) return;
 
   try {
     await prisma.$queryRaw`SELECT 1`;
   } catch (e) {
-    console.warn("[bootstrap-db] Sin conexión a la base:", e);
+    console.warn("[bootstrap-db] Sin conexión a la base");
+    console.warn(e instanceof Error ? e.message : "error de conexión");
+    return;
+  }
+
+  if (!demoSeedEnabled()) {
     return;
   }
 
   try {
     const n = await prisma.user.count();
-    if (n === 0) {
-      const { runSeed } = await import("../prisma/seed-logic");
-      await runSeed();
-      console.info("[bootstrap-db] Seed aplicado (base vacía).");
+    if (n > 0) {
+      console.info("[bootstrap-db] Base con usuarios; seed demo omitido.");
       return;
     }
 
-    const passwordAdmin = await bcrypt.hash("admin", 10);
-    await prisma.user.upsert({
-      where: { email: "admin@evalia.app" },
-      update: { password: passwordAdmin, role: UserRole.ADMIN },
-      create: {
-        email: "admin@evalia.app",
-        name: "Admin EvalIA",
-        password: passwordAdmin,
-        role: UserRole.ADMIN,
-      },
-    });
-    console.info("[bootstrap-db] Usuario admin verificado.");
+    const { runSeed } = await import("../prisma/seed-logic");
+    await runSeed();
+    console.info("[bootstrap-db] Seed demo aplicado (ALLOW_DEMO_SEED=true, base vacía).");
   } catch (e) {
-    console.error("[bootstrap-db]", e);
+    console.error("[bootstrap-db] Falló el seed demo");
+    console.error(e instanceof Error ? e.message : "error");
   }
 }
