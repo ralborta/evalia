@@ -80,3 +80,32 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1
 
 CMD ["node", "server.js"]
+
+# --- Worker de procesamiento CV (BullMQ) ---
+FROM base AS worker
+ENV NODE_ENV=production
+ENV WORKER_HEALTH_PORT=8081
+ENV ALLOW_DEMO_SEED=false
+
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate \
+  && apk add --no-cache wget \
+  && addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 --ingroup nodejs worker
+
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/lib ./lib
+COPY --from=builder /app/worker ./worker
+COPY --from=builder /app/tsconfig.json ./
+
+# Placeholder solo para prisma generate en runtime si hiciera falta regenerar
+ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
+
+USER worker
+EXPOSE 8081
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8081/health || exit 1
+
+CMD ["pnpm", "exec", "tsx", "worker/index.ts"]
+

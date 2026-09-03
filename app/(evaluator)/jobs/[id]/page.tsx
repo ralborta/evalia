@@ -5,6 +5,7 @@ import { requireEvaluatorPage } from "@/lib/require-evaluator-page";
 import { JobForm } from "@/components/talent/job-form";
 import { PipelineKanban } from "@/components/talent/pipeline-kanban";
 import { ApplicationCreateForm } from "@/components/talent/application-create-form";
+import { JobRankingPanel } from "@/components/talent/job-ranking-panel";
 import { Badge } from "@/components/ui/badge";
 import { canWriteOrg } from "@/lib/org-context";
 
@@ -76,6 +77,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           <ApplicationCreateForm jobId={job.id} canWrite={canWrite} />
         </div>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-slate-900">Ranking por CV</h2>
+        <JobRankingPanel jobId={job.id} />
+      </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

@@ -55,6 +55,40 @@ enum AuditAction {
   SCORECARD_PUBLISHED
   APPLICATION_CREATED
   APPLICATION_STAGE_MOVED
+  DOCUMENT_UPLOADED
+  DOCUMENT_ACCESSED
+  DOCUMENT_DELETED
+  CV_ANALYSIS_STARTED
+  CV_ANALYSIS_COMPLETED
+  CV_ANALYSIS_FAILED
+  CV_REPROCESSED
+}
+
+enum DocumentKind {
+  CV
+}
+
+enum DocumentProcessingStatus {
+  UPLOADED
+  QUEUED
+  EXTRACTING
+  ANALYZING
+  COMPLETED
+  FAILED
+  NEEDS_OCR
+}
+
+enum CriterionMatchStatus {
+  MEETS
+  DOES_NOT_MEET
+  NOT_FOUND
+  NEEDS_VALIDATION
+}
+
+enum ExcludingOutcome {
+  PASS
+  FAIL
+  UNKNOWN
 }
 
 model Organization {
@@ -74,6 +108,10 @@ model Organization {
   applications       Application[]
   pipelineStages     PipelineStage[]
   auditLogs          AuditLog[]
+  candidateDocuments CandidateDocument[]
+  documentExtractions DocumentExtraction[]
+  cvStructuredProfiles CvStructuredProfile[]
+  cvEvaluations      CvEvaluation[]
 }
 
 model OrganizationMember {
@@ -107,6 +145,8 @@ model User {
   scorecardsCreated Scorecard[]          @relation("ScorecardCreatedBy")
   applicationsCreated Application[]      @relation("ApplicationCreatedBy")
   stageMoves        ApplicationStageHistory[]
+  documentsUploaded CandidateDocument[]  @relation("DocumentUploadedBy")
+  cvEvaluationsCreated CvEvaluation[]    @relation("CvEvaluationCreatedBy")
 }
 
 model Candidate {
@@ -120,6 +160,7 @@ model Candidate {
   linkedUser     User?        @relation(fields: [linkedUserId], references: [id])
   interviews     Interview[]
   applications   Application[]
+  documents      CandidateDocument[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -283,6 +324,7 @@ model Job {
   scorecards           Scorecard[]      @relation("JobScorecards")
   stages               PipelineStage[]
   applications         Application[]
+  cvEvaluations        CvEvaluation[]
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 
@@ -307,6 +349,7 @@ model Scorecard {
   criteria       ScorecardCriterion[]
   jobsUsing      Job[]           @relation("JobPublishedScorecard")
   applications   Application[]
+  cvEvaluations  CvEvaluation[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -372,6 +415,8 @@ model Application {
   createdById    String?
   createdBy      User?             @relation("ApplicationCreatedBy", fields: [createdById], references: [id])
   history        ApplicationStageHistory[]
+  documents      CandidateDocument[]
+  cvEvaluations  CvEvaluation[]
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -409,4 +454,135 @@ model AuditLog {
 
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
+}
+
+// --- EvalIA Talent Fase 2: CV upload / extracción / ranking ---
+
+model CandidateDocument {
+  id               String                   @id @default(cuid())
+  organizationId   String
+  organization     Organization             @relation(fields: [organizationId], references: [id])
+  applicationId    String
+  application      Application              @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  candidateId      String
+  candidate        Candidate                @relation(fields: [candidateId], references: [id])
+  kind             DocumentKind             @default(CV)
+  version          Int
+  isCurrent        Boolean                  @default(true)
+  originalFileName String
+  mimeType         String
+  byteSize         Int
+  sha256           String
+  storageKey       String
+  processingStatus DocumentProcessingStatus @default(UPLOADED)
+  processingError  String?
+  uploadedById     String?
+  uploadedBy       User?                    @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+  extraction       DocumentExtraction?
+  structuredProfiles CvStructuredProfile[]
+  evaluations      CvEvaluation[]
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@unique([organizationId, sha256])
+  @@index([organizationId, applicationId, isCurrent])
+  @@index([organizationId, candidateId])
+  @@index([applicationId, version])
+}
+
+model DocumentExtraction {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  documentId     String            @unique
+  document       CandidateDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  rawText        String?
+  charCount      Int               @default(0)
+  pageCount      Int?
+  extractor      String
+  needsOcr       Boolean           @default(false)
+  ocrProvider    String?
+  createdAt      DateTime          @default(now())
+
+  @@index([organizationId])
+}
+
+model CvStructuredProfile {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  documentId     String
+  document       CandidateDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version        Int
+  profileJson    Json
+  parserVersion  String
+  model          String?
+  promptVersion  String
+  createdAt      DateTime          @default(now())
+
+  @@unique([documentId, version])
+  @@index([organizationId, documentId])
+}
+
+model CvEvaluation {
+  id                  String                   @id @default(cuid())
+  organizationId      String
+  organization        Organization             @relation(fields: [organizationId], references: [id])
+  applicationId       String
+  application         Application              @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  jobId               String
+  job                 Job                      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  documentId          String
+  document            CandidateDocument        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  scorecardId         String
+  scorecard           Scorecard                @relation(fields: [scorecardId], references: [id])
+  version             Int
+  isCurrent           Boolean                  @default(true)
+  status              DocumentProcessingStatus @default(QUEUED)
+  overallScore        Float?
+  excludingOutcome    ExcludingOutcome         @default(UNKNOWN)
+  rankingExplanation  String?
+  model               String?
+  promptVersion       String
+  scorecardVersion    Int
+  errorMessage        String?
+  createdById         String?
+  createdBy           User?                    @relation("CvEvaluationCreatedBy", fields: [createdById], references: [id])
+  criteriaResults     CvCriterionResult[]
+  suggestedQuestions  CvSuggestedQuestion[]
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+
+  @@unique([applicationId, version])
+  @@index([organizationId, jobId, overallScore])
+  @@index([organizationId, applicationId, isCurrent])
+}
+
+model CvCriterionResult {
+  id             String               @id @default(cuid())
+  evaluationId   String
+  evaluation     CvEvaluation         @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterionKey   String
+  criterionLabel String
+  criterionType  CriterionType
+  weight         Int
+  status         CriterionMatchStatus
+  partialScore   Float
+  confidence     Float
+  evidence       String
+  explanation    String
+
+  @@index([evaluationId])
+}
+
+model CvSuggestedQuestion {
+  id           String       @id @default(cuid())
+  evaluationId String
+  evaluation   CvEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterionKey String?
+  question     String
+  reason       String?
+  sortOrder    Int          @default(0)
+
+  @@index([evaluationId, sortOrder])
 }
