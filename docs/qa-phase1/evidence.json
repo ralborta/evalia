@@ -1,0 +1,125 @@
+{
+  "base": "https://evalia-evalia-web.wd75db.easypanel.host",
+  "jobTitle": "Ejecutivo de ventas B2B 2026-09-03 00:56",
+  "jobId": "cmtkt4fqk000s11z4t1yce38k",
+  "applicationId": "cmtktf1qa006a11z4f0kny4sd",
+  "results": [
+    {
+      "id": "jwt-org-activa",
+      "ok": true,
+      "detail": "status=200 org=org_evalia_inicial role=RECRUITER"
+    },
+    {
+      "id": "selector-organizaciones",
+      "ok": true,
+      "detail": "opciones=['EvalIA', 'Acme Talent Test']"
+    },
+    {
+      "id": "aislamiento-evalia-no-ve-acme",
+      "ok": true,
+      "detail": "vacantes_evalia=['Ejecutivo de ventas B2B 2026-09-03 00:48', 'QA rol staging.orgadmin', 'QA rol staging.owner', 'Ejecutivo de ventas B2B 2026-09-03 00:48', 'Ejecutivo de ventas B2B 2026-09-03 00:46', 'CSM biling\u00fce']"
+    },
+    {
+      "id": "cambio-org-jwt",
+      "ok": true,
+      "detail": "jwt=org_acme_talent_test esperado=org_acme_talent_test"
+    },
+    {
+      "id": "aislamiento-acme-no-ve-evalia",
+      "ok": true,
+      "detail": "vacantes_acme=['QA rol staging.acme', 'Ops Lead']"
+    },
+    {
+      "id": "crear-vacante",
+      "ok": true,
+      "detail": "reusa jobId=cmtkt4fqk000s11z4t1yce38k"
+    },
+    {
+      "id": "asistente-ia",
+      "ok": true,
+      "detail": "propuesta recibida"
+    },
+    {
+      "id": "no-publica-pesos-invalidos",
+      "ok": true,
+      "detail": "disabled=True scored=6"
+    },
+    {
+      "id": "publicar-scorecard",
+      "ok": true,
+      "detail": "publicado"
+    },
+    {
+      "id": "crear-candidato",
+      "ok": true,
+      "detail": "Luc\u00eda M\u00e9ndez 005710 asociada"
+    },
+    {
+      "id": "kanban-movimientos",
+      "ok": true,
+      "detail": "etapas=6"
+    },
+    {
+      "id": "historial-append-only",
+      "ok": true,
+      "detail": "eventos=5"
+    },
+    {
+      "id": "nueva-version-scorecard",
+      "ok": true,
+      "detail": "antes=Versi\u00f3n 2 \u00b7 Publicado despues=Versi\u00f3n 3 \u00b7 Borrador"
+    },
+    {
+      "id": "regresion-visual",
+      "ok": true,
+      "detail": "dashboard, candidatos, entrevistas e informes capturados"
+    },
+    {
+      "id": "responsive-nav",
+      "ok": true,
+      "detail": "nav m\u00f3vil a 390px"
+    },
+    {
+      "id": "permiso-staging.owner",
+      "ok": true,
+      "detail": "POST /api/jobs status=201"
+    },
+    {
+      "id": "permiso-staging.orgadmin",
+      "ok": true,
+      "detail": "POST /api/jobs status=201"
+    },
+    {
+      "id": "permiso-staging.viewer",
+      "ok": true,
+      "detail": "POST /api/jobs status=403"
+    },
+    {
+      "id": "permiso-staging.acme",
+      "ok": true,
+      "detail": "POST /api/jobs status=201"
+    },
+    {
+      "id": "acme-no-ve-recursos-evalia",
+      "ok": true,
+      "detail": "job=404 application=404"
+    },
+    {
+      "id": "consola-y-red",
+      "ok": true,
+      "detail": "console=0 hydration418=2 http=0"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "url": "https://evalia-evalia-web.wd75db.easypanel.host/interviews",
+      "text": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "url": "https://evalia-evalia-web.wd75db.easypanel.host/reports",
+      "text": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    }
+  ],
+  "networkErrors": [],
+  "at": "2026-09-03T00:57:32.327040+00:00"
+}

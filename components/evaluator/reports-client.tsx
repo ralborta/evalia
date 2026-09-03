@@ -141,7 +141,7 @@ export function ReportsClient({ data }: { data: ReportsDashboardPayload }) {
   const donutRedPct = pct(data.poor, data.total);
 
   const formatLongDay = (iso: string) =>
-    new Intl.DateTimeFormat("es", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+    new Intl.DateTimeFormat("es", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
@@ -360,7 +360,7 @@ export function ReportsClient({ data }: { data: ReportsDashboardPayload }) {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3.5 text-slate-600">
-                        {new Intl.DateTimeFormat("es", { day: "numeric", month: "short", year: "numeric" }).format(
+                        {new Intl.DateTimeFormat("es", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(
                           new Date(r.dateIso),
                         )}
                       </td>
