@@ -12,15 +12,21 @@ export const CriterionMatchStatusSchema = z.enum([
   "NEEDS_VALIDATION",
 ]);
 
-export const AiCriterionProposalSchema = z.object({
-  criterionKey: z.string(),
+export const AiCriterionProposalSchema = z.preprocess((value) => {
+  if (!value || typeof value !== "object") return value;
+  const obj = value as Record<string, unknown>;
+  const criterionKey =
+    obj.criterionKey ?? obj.key ?? obj.id ?? obj.criterion_key ?? obj.criterionId;
+  return { ...obj, criterionKey };
+}, z.object({
+  criterionKey: z.string().min(1),
   status: CriterionMatchStatusSchema,
   /** Sugerencia 0-100; el score final se recalcula en TypeScript. */
   partialScoreSuggestion: z.number().min(0).max(100).optional(),
   confidence: z.number().min(0).max(1),
   evidence: z.string().max(2000),
   explanation: z.string().max(2000),
-});
+}));
 
 export const AiCompareResponseSchema = z.object({
   criteria: z.array(AiCriterionProposalSchema).min(1),
@@ -193,9 +199,13 @@ export async function proposeCriterionMatches(input: {
     .join("\n");
 
   const prompt = `Compara el CV con el scorecard.
-Para cada criterio propone status (MEETS|DOES_NOT_MEET|NOT_FOUND|NEEDS_VALIDATION),
-partialScoreSuggestion 0-100 (solo orientativo; el score final lo calcula el sistema),
-confidence 0-1, evidence breve (cita del CV redactado) y explanation.
+Para CADA criterio del listado responde un objeto con:
+- criterionKey: DEBE ser exactamente el valor "key=" del criterio (no inventes otras claves)
+- status: MEETS|DOES_NOT_MEET|NOT_FOUND|NEEDS_VALIDATION
+- partialScoreSuggestion: 0-100 (orientativo; el score final lo calcula el sistema)
+- confidence: 0-1
+- evidence: cita breve del CV redactado
+- explanation: breve
 NOT_FOUND no es lo mismo que DOES_NOT_MEET.
 No uses dirección, edad, género, nacionalidad ni documentos de identidad.
 Sugiere hasta 5 preguntas de validación cuando falte evidencia.
@@ -210,7 +220,7 @@ Texto CV redactado:
 ${text}
 
 JSON:
-{ "criteria": [...], "suggestedQuestions": [{ "criterionKey": "", "question": "", "reason": "" }] }`;
+{ "criteria": [{ "criterionKey": "...", "status": "...", "partialScoreSuggestion": 0, "confidence": 0.5, "evidence": "...", "explanation": "..." }], "suggestedQuestions": [{ "criterionKey": "", "question": "", "reason": "" }] }`;
 
   const completion = await openai.chat.completions.create({
     model,
