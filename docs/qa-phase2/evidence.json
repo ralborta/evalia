@@ -1,0 +1,79 @@
+{
+  "base": "https://evalia-evalia-web.wd75db.easypanel.host",
+  "jobId": "cmtkt4fqk000s11z4t1yce38k",
+  "at": "2026-09-03T02:35:49.214181+00:00",
+  "results": [
+    {
+      "id": "pdf-upload",
+      "ok": true,
+      "detail": "status=201 body_keys=['document']"
+    },
+    {
+      "id": "pdf-process",
+      "ok": true,
+      "detail": "status={'id': 'cmtkwx9o3ca080650a2b5b09e', 'version': 1, 'isCurrent': True, 'originalFileName': 'cv-texto.pdf', 'mimeType': 'application/pdf', 'byteSize': 1136, 'processingStatus': 'COMPLETED', 'processingError': None, 'createdAt': '2026-09-03T02:35:21.296Z', 'updatedAt': '2026-09-03T02:35:30.734Z'}"
+    },
+    {
+      "id": "pdf-analysis",
+      "ok": true,
+      "detail": "status=200 score=54.5 excl=UNKNOWN"
+    },
+    {
+      "id": "docx-upload",
+      "ok": true,
+      "detail": "status=201"
+    },
+    {
+      "id": "docx-process",
+      "ok": true,
+      "detail": "status={'id': 'cmtkwxjegc33b058548ef90e6', 'version': 1, 'isCurrent': True, 'originalFileName': 'cv-texto.docx', 'mimeType': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'byteSize': 1294, 'processingStatus': 'COMPLETED', 'processingError': None, 'createdAt': '2026-09-03T02:35:33.883Z', 'updatedAt': '2026-09-03T02:35:41.304Z'}"
+    },
+    {
+      "id": "scan-upload",
+      "ok": true,
+      "detail": "status=201"
+    },
+    {
+      "id": "scan-needs-ocr",
+      "ok": true,
+      "detail": "status={'id': 'cmtkwxqm20beda12c18ef176d', 'version': 1, 'isCurrent': True, 'originalFileName': 'cv-escaneado.pdf', 'mimeType': 'application/pdf', 'byteSize': 443, 'processingStatus': 'NEEDS_OCR', 'processingError': 'Texto insuficiente; se requiere OCR', 'createdAt': '2026-09-03T02:35:43.229Z', 'updatedAt': '2026-09-03T02:35:43.255Z'}"
+    },
+    {
+      "id": "invalid-reject",
+      "ok": true,
+      "detail": "status=400 body={'error': 'Solo se admiten PDF o DOCX', 'code': 'BAD_EXTENSION'}"
+    },
+    {
+      "id": "duplicate-hash",
+      "ok": true,
+      "detail": "status=409 body={'error': 'Este archivo ya existe en otra candidatura de la organización'}"
+    },
+    {
+      "id": "ranking",
+      "ok": true,
+      "detail": "status=200 n=3 sample=[{'rank': 1, 'applicationId': 'cmtkte42l004i11z4lg0m81el', 'candidateId': 'cmtkte42g004f11z40pqd9rw7', 'candidateName': 'Lucía Méndez', 'overallScore': 54.5, 'excludingOutcome': 'UNKNOWN', 'eligible': True, 'warnings': ['Excluyentes pendientes de validación', 'Criterios pendientes de validación humana'], 'explanationVsNeighbor': 'Lucía Méndez es el primero del ranking actual.', 'evaluationId': 'cm"
+    },
+    {
+      "id": "viewer-no-write",
+      "ok": true,
+      "detail": "status=403"
+    },
+    {
+      "id": "org-isolation",
+      "ok": true,
+      "detail": "list=404 doc=404"
+    },
+    {
+      "id": "ui-application-cv",
+      "ok": true,
+      "detail": "url=https://evalia-evalia-web.wd75db.easypanel.host/applications/cmtkte42l004i11z4lg0m81el"
+    },
+    {
+      "id": "ui-job-ranking",
+      "ok": true,
+      "detail": "url=https://evalia-evalia-web.wd75db.easypanel.host/jobs/cmtkt4fqk000s11z4t1yce38k"
+    }
+  ],
+  "passed": 14,
+  "total": 14
+}

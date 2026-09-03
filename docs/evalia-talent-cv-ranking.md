@@ -19,10 +19,12 @@ Estados: `UPLOADED → QUEUED → EXTRACTING → ANALYZING → COMPLETED|FAILED|
 
 ## Storage
 
-- Backend FS: `CANDIDATE_DOCS_ROOT` (default `/data/candidate-docs`)
+- Backend FS: `CANDIDATE_DOCS_ROOT` (default `/data/candidate-docs`) por servicio
+- Espejo Redis `cvdoc:blob:{storageKey}`: EasyPanel no comparte volúmenes Docker entre `evalia-web` y `evalia-worker`; el worker hidrata el FS local desde Redis si falta el archivo
 - Clave: `org/{organizationId}/doc/{documentId}/{randomHex}`
 - Descarga firmada HMAC-SHA256: `/api/documents/{id}/content?exp=&sig=` (`CANDIDATE_DOCS_SIGNING_SECRET`)
 - Gancho `maybeAnonymizeForRanking()` listo para anonimización futura
+- Separado del bucket/volumen de backups
 
 ## Cola
 
