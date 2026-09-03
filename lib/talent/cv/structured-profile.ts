@@ -54,7 +54,20 @@ export const CvStructuredProfileSchema = z.object({
   tools: z.array(stringListItem).max(80).default([]),
   languages: z.array(languageItem).max(20).default([]),
   skills: z.array(stringListItem).max(100).default([]),
-  achievements: z.array(stringListItem.max(500)).max(40).default([]),
+  achievements: z
+    .array(
+      z.preprocess((value) => {
+        if (typeof value === "string") return value;
+        if (value && typeof value === "object") {
+          const obj = value as Record<string, unknown>;
+          const candidate = obj.name ?? obj.title ?? obj.label ?? obj.value;
+          if (typeof candidate === "string") return candidate;
+        }
+        return value;
+      }, z.string().max(500)),
+    )
+    .max(40)
+    .default([]),
 });
 
 export type CvStructuredProfileData = z.infer<typeof CvStructuredProfileSchema>;
