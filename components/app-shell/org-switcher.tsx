@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -11,15 +12,17 @@ export function OrgSwitcher({
   activeOrganizationId: string;
 }) {
   const router = useRouter();
+  const { update } = useSession();
   const [pending, startTransition] = useTransition();
   const [value, setValue] = useState(activeOrganizationId);
 
   if (organizations.length === 0) return null;
 
   return (
-    <label className="hidden min-w-[10rem] text-left sm:block">
+    <label className="min-w-[9rem] text-left">
       <span className="sr-only">Organización</span>
       <select
+        data-testid="org-switcher"
         value={value}
         disabled={pending || organizations.length === 1}
         onChange={(event) => {
@@ -31,6 +34,7 @@ export function OrgSwitcher({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ organizationId }),
             });
+            await update({ organizationId });
             router.refresh();
           });
         }}

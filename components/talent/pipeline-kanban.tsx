@@ -10,10 +10,12 @@ type Card = { id: string; candidateName: string; stageId: string };
 export function PipelineKanban({
   stages,
   applications,
+  canWrite = true,
 }: {
   jobId: string;
   stages: Stage[];
   applications: Card[];
+  canWrite?: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export function PipelineKanban({
                     <select
                       className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs"
                       value={card.stageId}
+                      disabled={!canWrite}
                       onChange={(e) => move(card.id, e.target.value)}
                     >
                       {stages.map((s) => (

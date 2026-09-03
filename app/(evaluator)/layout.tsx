@@ -96,6 +96,7 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
             </div>
           </div>
         </header>
+        <EvaluatorNav variant="mobile" />
         <main className="flex-1 p-5 md:p-8">
           <RefreshOnFocus />
           {children}

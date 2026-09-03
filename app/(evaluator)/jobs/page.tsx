@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireEvaluatorPage } from "@/lib/require-evaluator-page";
 import { Badge } from "@/components/ui/badge";
+import { canWriteOrg } from "@/lib/org-context";
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Borrador",
@@ -13,6 +14,7 @@ const statusLabel: Record<string, string> = {
 
 export default async function JobsPage() {
   const ctx = await requireEvaluatorPage();
+  const canWrite = canWriteOrg(ctx.memberRole);
   const jobs = await prisma.job.findMany({
     where: { organizationId: ctx.organizationId },
     orderBy: { updatedAt: "desc" },
@@ -29,12 +31,14 @@ export default async function JobsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Vacantes</h1>
           <p className="mt-1 text-sm text-slate-600">Búsquedas de EvalIA Talent, aisladas por organización.</p>
         </div>
-        <Link
-          href="/jobs/new"
-          className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-        >
-          Nueva vacante
-        </Link>
+        {canWrite ? (
+          <Link
+            href="/jobs/new"
+            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+          >
+            Nueva vacante
+          </Link>
+        ) : null}
       </div>
       {jobs.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">

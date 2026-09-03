@@ -5,6 +5,7 @@ import {
   assertPublishableScorecard,
   slugifyCriterionKey,
   validateScorecardWeights,
+  nextScorecardVersionAction,
 } from "@/lib/talent/scorecard";
 
 const scored = (weight: number, key = "idioma") => ({
@@ -94,3 +95,20 @@ describe("criterion keys", () => {
     expect(slugifyCriterionKey("Inglés oral", 0)).toBe("ingles_oral");
   });
 });
+
+describe("versionado inmutable del scorecard", () => {
+  it("editar un scorecard publicado crea una nueva versión", () => {
+    const published = { id: "sc_v1", status: "PUBLISHED" as const, version: 1 };
+    expect(nextScorecardVersionAction(published)).toEqual({ mode: "create", version: 2 });
+  });
+
+  it("guardar un borrador existente no cambia de versión", () => {
+    const draft = { id: "sc_draft", status: "DRAFT" as const, version: 2 };
+    expect(nextScorecardVersionAction(draft)).toEqual({
+      mode: "update",
+      id: "sc_draft",
+      version: 2,
+    });
+  });
+});
+

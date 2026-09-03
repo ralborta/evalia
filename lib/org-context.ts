@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { OrgMemberRole, UserRole } from "@prisma/client";
+import { canWriteOrg, pickOrganizationId } from "@/lib/talent/org-policy";
+
+export { canWriteOrg, pickOrganizationId } from "@/lib/talent/org-policy";
 
 export const ORG_COOKIE = "evalia-organization-id";
 
@@ -47,12 +50,11 @@ export async function listMemberships(userId: string): Promise<OrgMembership[]> 
 
 export async function resolveOrganizationId(userId: string, requested?: string | null): Promise<string | null> {
   const memberships = await listMemberships(userId);
-  if (memberships.length === 0) return null;
-  if (requested && memberships.some((m) => m.organizationId === requested)) return requested;
   const jar = await cookies();
-  const fromCookie = jar.get(ORG_COOKIE)?.value;
-  if (fromCookie && memberships.some((m) => m.organizationId === fromCookie)) return fromCookie;
-  return memberships[0]!.organizationId;
+  return pickOrganizationId(memberships, {
+    cookie: jar.get(ORG_COOKIE)?.value,
+    jwt: requested,
+  });
 }
 
 export async function requireOrgContext(options?: {
@@ -69,11 +71,15 @@ export async function requireOrgContext(options?: {
   const memberships = await listMemberships(session.user.id);
   if (memberships.length === 0) throw new OrgAccessError("Sin organización asignada", 403);
 
-  const organizationId = await resolveOrganizationId(session.user.id, session.user.organizationId);
+  const jar = await cookies();
+  const organizationId = pickOrganizationId(memberships, {
+    cookie: jar.get(ORG_COOKIE)?.value,
+    jwt: session.user.organizationId,
+  });
   const current = memberships.find((m) => m.organizationId === organizationId);
   if (!current) throw new OrgAccessError("Organización no permitida", 403);
 
-  if (options?.write && current.memberRole === "VIEWER") {
+  if (options?.write && !canWriteOrg(current.memberRole)) {
     throw new OrgAccessError("Sin permiso de escritura", 403);
   }
 

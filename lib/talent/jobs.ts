@@ -2,7 +2,7 @@ import { AuditAction, JobStatus, Prisma, ScorecardStatus } from "@prisma/client"
 import { prisma } from "@/lib/prisma";
 import { writeAudit } from "@/lib/audit";
 import { defaultPipelineCreateData } from "@/lib/talent/pipeline";
-import { assertPublishableScorecard, type ScorecardDraft } from "@/lib/talent/scorecard";
+import { assertPublishableScorecard, nextScorecardVersionAction, type ScorecardDraft } from "@/lib/talent/scorecard";
 
 function newFamilyId() {
   return `scf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -106,15 +106,16 @@ export async function saveScorecardDraft(input: {
   if (!job) return null;
 
   const latest = await getLatestScorecard(job.id, input.organizationId);
+  const action = nextScorecardVersionAction(latest);
   const target =
-    latest && latest.status === ScorecardStatus.DRAFT
-      ? latest
+    action.mode === "update"
+      ? latest!
       : await prisma.scorecard.create({
           data: {
             organizationId: input.organizationId,
             jobId: job.id,
             familyId: latest?.familyId ?? newFamilyId(),
-            version: (latest?.version ?? 0) + 1,
+            version: action.version,
             status: ScorecardStatus.DRAFT,
             name: input.draft.name,
             sourcePrompt: input.draft.sourcePrompt ?? null,
@@ -148,7 +149,7 @@ export async function saveScorecardDraft(input: {
     await writeAudit(tx, {
       organizationId: input.organizationId,
       actorUserId: input.actorUserId,
-      action: latest && latest.status === ScorecardStatus.DRAFT ? AuditAction.SCORECARD_UPDATED : AuditAction.SCORECARD_CREATED,
+      action: action.mode === "update" ? AuditAction.SCORECARD_UPDATED : AuditAction.SCORECARD_CREATED,
       entityType: "Scorecard",
       entityId: saved.id,
     });

@@ -6,6 +6,7 @@ import { JobForm } from "@/components/talent/job-form";
 import { PipelineKanban } from "@/components/talent/pipeline-kanban";
 import { ApplicationCreateForm } from "@/components/talent/application-create-form";
 import { Badge } from "@/components/ui/badge";
+import { canWriteOrg } from "@/lib/org-context";
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireEvaluatorPage();
@@ -22,6 +23,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     },
   });
   if (!job) notFound();
+  const canWrite = canWriteOrg(ctx.memberRole);
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -46,6 +48,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       <div className="grid gap-6 lg:grid-cols-2">
         <JobForm
           jobId={job.id}
+          canWrite={canWrite}
           initial={{
             title: job.title,
             description: job.description,
@@ -70,7 +73,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               Aún no hay una versión publicada. Las candidaturas nuevas no quedan atadas a un scorecard histórico.
             </p>
           )}
-          <ApplicationCreateForm jobId={job.id} />
+          <ApplicationCreateForm jobId={job.id} canWrite={canWrite} />
         </div>
       </div>
 
@@ -81,6 +84,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         </div>
         <PipelineKanban
           jobId={job.id}
+          canWrite={canWrite}
           stages={job.stages}
           applications={job.applications.map((a) => ({
             id: a.id,

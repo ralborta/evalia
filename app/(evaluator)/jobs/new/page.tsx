@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { JobForm } from "@/components/talent/job-form";
 import { requireEvaluatorPage } from "@/lib/require-evaluator-page";
+import { canWriteOrg } from "@/lib/org-context";
+import { redirect } from "next/navigation";
 
 export default async function NewJobPage() {
-  await requireEvaluatorPage();
+  const ctx = await requireEvaluatorPage();
+  if (!canWriteOrg(ctx.memberRole)) redirect("/jobs");
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <Link href="/jobs" className="text-sm font-semibold text-blue-600 hover:text-blue-700">

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireEvaluatorPage } from "@/lib/require-evaluator-page";
 import { PipelineKanban } from "@/components/talent/pipeline-kanban";
+import { canWriteOrg } from "@/lib/org-context";
 
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireEvaluatorPage();
@@ -21,6 +22,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     },
   });
   if (!application) notFound();
+  const canWrite = canWriteOrg(ctx.memberRole);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -39,6 +41,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         <div className="mt-3">
           <PipelineKanban
             jobId={application.jobId}
+            canWrite={canWrite}
             stages={application.job.stages}
             applications={[{ id: application.id, candidateName: application.candidate.name, stageId: application.stageId }]}
           />

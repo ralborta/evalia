@@ -103,3 +103,12 @@ export function slugifyCriterionKey(label: string, index: number) {
     .slice(0, 40);
   return base || `criterio_${index + 1}`;
 }
+
+export function nextScorecardVersionAction(
+  latest: { id: string; status: "DRAFT" | "PUBLISHED" | "ARCHIVED"; version: number } | null,
+): { mode: "update"; id: string; version: number } | { mode: "create"; version: number } {
+  if (latest && latest.status === "DRAFT") {
+    return { mode: "update", id: latest.id, version: latest.version };
+  }
+  return { mode: "create", version: (latest?.version ?? 0) + 1 };
+}

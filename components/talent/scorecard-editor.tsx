@@ -35,6 +35,7 @@ export function ScorecardEditor({
   initialCriteria,
   status,
   version,
+  canWrite = true,
 }: {
   jobId: string;
   initialName: string;
@@ -42,6 +43,7 @@ export function ScorecardEditor({
   initialCriteria: Criterion[];
   status: string;
   version: number;
+  canWrite?: boolean;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -161,10 +163,11 @@ export function ScorecardEditor({
         <textarea
           value={aiText}
           onChange={(e) => setAiText(e.target.value)}
+          disabled={!canWrite}
           className="mt-3 min-h-28 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
           placeholder="Ej: Buscamos un CSM bilingüe, con experiencia en SaaS B2B, que cierre renovaciones y no tenga restricciones para viajar."
         />
-        <Button type="button" className="mt-3" variant="secondary" disabled={busy || aiText.trim().length < 20} onClick={generate}>
+        <Button type="button" className="mt-3" variant="secondary" disabled={!canWrite || busy || aiText.trim().length < 20} onClick={generate}>
           Proponer criterios
         </Button>
       </div>
@@ -274,6 +277,7 @@ export function ScorecardEditor({
       </Button>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {!canWrite ? <p className="text-sm text-slate-500">Tu rol de visor no permite publicar ni editar el scorecard.</p> : null}
       {info ? <p className="text-sm text-slate-600">{info}</p> : null}
       {proposalReady ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
@@ -282,10 +286,10 @@ export function ScorecardEditor({
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="button" variant="secondary" disabled={busy} onClick={saveDraft}>
+        <Button type="button" variant="secondary" disabled={!canWrite || busy} onClick={saveDraft}>
           Guardar borrador
         </Button>
-        <Button type="button" disabled={busy || !weights.ok} onClick={publish}>
+        <Button type="button" disabled={!canWrite || busy || !weights.ok} onClick={publish} data-testid="publish-scorecard">
           Publicar versión
         </Button>
       </div>

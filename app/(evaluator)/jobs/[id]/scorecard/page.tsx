@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireEvaluatorPage } from "@/lib/require-evaluator-page";
 import { getLatestScorecard } from "@/lib/talent/jobs";
 import { ScorecardEditor } from "@/components/talent/scorecard-editor";
+import { canWriteOrg } from "@/lib/org-context";
 
 export default async function JobScorecardPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireEvaluatorPage();
@@ -14,6 +15,7 @@ export default async function JobScorecardPage({ params }: { params: Promise<{ i
   });
   if (!job) notFound();
   const scorecard = await getLatestScorecard(job.id, ctx.organizationId);
+  const canWrite = canWriteOrg(ctx.memberRole);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -28,6 +30,7 @@ export default async function JobScorecardPage({ params }: { params: Promise<{ i
       </div>
       <ScorecardEditor
         jobId={job.id}
+        canWrite={canWrite}
         initialName={scorecard?.name ?? `Scorecard · ${job.title}`}
         initialSourcePrompt={scorecard?.sourcePrompt}
         status={scorecard?.status ?? "DRAFT"}
