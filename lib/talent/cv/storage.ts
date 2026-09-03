@@ -19,6 +19,10 @@ function signingSecret() {
   return secret;
 }
 
+function redisBlobKey(storageKey: string) {
+  return `cvdoc:blob:${storageKey}`;
+}
+
 export function buildStorageKey(organizationId: string, documentId: string) {
   const randomHex = randomBytes(16).toString("hex");
   return `org/${organizationId}/doc/${documentId}/${randomHex}`;
@@ -51,6 +55,12 @@ export function maybeAnonymizeForRanking(text: string): string {
   return text;
 }
 
+/**
+ * Almacenamiento privado en disco + espejo en Redis.
+ * Redis cubre el caso EasyPanel donde volúmenes con el mismo nombre no se
+ * comparten entre evalia-web y evalia-worker. El FS sigue siendo la fuente
+ * canónica local; Redis permite al worker recuperar el blob sin PII en logs.
+ */
 export class FsDocumentStorage implements DocumentStorage {
   constructor(private readonly root = docsRoot()) {}
 
@@ -61,19 +71,58 @@ export class FsDocumentStorage implements DocumentStorage {
     return join(this.root, key);
   }
 
+  private async redis() {
+    if (!process.env.REDIS_URL) return null;
+    const { getRedisConnection } = await import("@/lib/talent/cv/queue");
+    return getRedisConnection();
+  }
+
   async put(key: string, data: Buffer, _contentType: string): Promise<void> {
     const path = this.abs(key);
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, data);
+    try {
+      const redis = await this.redis();
+      if (redis) {
+        // Sin TTL: el worker debe poder reprocesar; delete() limpia.
+        await redis.set(redisBlobKey(key), data);
+      }
+    } catch {
+      // El put en disco ya es suficiente si web y worker comparten FS.
+    }
   }
 
   async get(key: string): Promise<Buffer> {
-    return readFile(this.abs(key));
+    try {
+      return await readFile(this.abs(key));
+    } catch {
+      const redis = await this.redis();
+      if (!redis) throw new Error("documento no encontrado en almacenamiento");
+      const raw = await redis.getBuffer(redisBlobKey(key));
+      if (!raw || raw.length === 0) {
+        throw new Error("documento no encontrado en almacenamiento");
+      }
+      // Hidratar FS local del worker para lecturas siguientes / OCR.
+      try {
+        const path = this.abs(key);
+        await mkdir(dirname(path), { recursive: true });
+        await writeFile(path, raw);
+      } catch {
+        // no bloquear si el FS local no es escribible
+      }
+      return raw;
+    }
   }
 
   async delete(key: string): Promise<void> {
     try {
       await unlink(this.abs(key));
+    } catch {
+      // idempotente
+    }
+    try {
+      const redis = await this.redis();
+      if (redis) await redis.del(redisBlobKey(key));
     } catch {
       // idempotente
     }
