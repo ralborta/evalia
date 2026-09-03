@@ -6,6 +6,27 @@ import { maybeAnonymizeForRanking } from "@/lib/talent/cv/storage";
 export const PARSER_VERSION = "cv-profile-v1";
 export const PROFILE_PROMPT_VERSION = "cv-profile-prompt-v1";
 
+const stringListItem = z.preprocess((value) => {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const candidate = obj.name ?? obj.title ?? obj.label ?? obj.value;
+    if (typeof candidate === "string") return candidate;
+  }
+  return value;
+}, z.string().max(200));
+
+const languageItem = z.preprocess((value) => {
+  if (typeof value === "string") {
+    const [name, ...rest] = value.split(/[-–—,:]/).map((s) => s.trim());
+    return { name, level: rest.join(" ").trim() || null };
+  }
+  return value;
+}, z.object({
+  name: z.string().max(80),
+  level: z.string().max(80).optional().nullable(),
+}));
+
 export const CvStructuredProfileSchema = z.object({
   experience: z
     .array(
@@ -29,19 +50,11 @@ export const CvStructuredProfileSchema = z.object({
     )
     .max(30)
     .default([]),
-  certifications: z.array(z.string().max(200)).max(40).default([]),
-  tools: z.array(z.string().max(100)).max(80).default([]),
-  languages: z
-    .array(
-      z.object({
-        name: z.string().max(80),
-        level: z.string().max(80).optional().nullable(),
-      }),
-    )
-    .max(20)
-    .default([]),
-  skills: z.array(z.string().max(100)).max(100).default([]),
-  achievements: z.array(z.string().max(500)).max(40).default([]),
+  certifications: z.array(stringListItem).max(40).default([]),
+  tools: z.array(stringListItem).max(80).default([]),
+  languages: z.array(languageItem).max(20).default([]),
+  skills: z.array(stringListItem).max(100).default([]),
+  achievements: z.array(stringListItem.max(500)).max(40).default([]),
 });
 
 export type CvStructuredProfileData = z.infer<typeof CvStructuredProfileSchema>;
@@ -50,6 +63,8 @@ function buildProfilePrompt(redactedText: string) {
   return `Extrae un perfil profesional estructurado del CV.
 Reglas estrictas:
 - Devuelve SOLO JSON válido con las claves: experience, education, certifications, tools, languages, skills, achievements.
+- certifications/tools/skills/achievements: arrays de strings.
+- languages: array de objetos { "name": string, "level": string|null }.
 - NO inventes datos que no estén en el texto.
 - NO incluyas dirección, foto, edad, género, nacionalidad, documento de identidad, estado civil ni datos de contacto.
 - Si un campo no aparece, usa lista vacía o null.
