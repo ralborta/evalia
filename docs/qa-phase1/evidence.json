@@ -1,8 +1,8 @@
 {
   "base": "https://evalia-evalia-web.wd75db.easypanel.host",
-  "jobTitle": "Ejecutivo de ventas B2B 2026-09-03 00:56",
-  "jobId": "cmtkt4fqk000s11z4t1yce38k",
-  "applicationId": "cmtktf1qa006a11z4f0kny4sd",
+  "jobTitle": "Ejecutivo de ventas B2B 2026-09-03 02:36",
+  "jobId": "cmtkwyrpc0008qdyc2c4cgimo",
+  "applicationId": "cmtkwz62x001pqdyc2k7846h9",
   "results": [
     {
       "id": "jwt-org-activa",
@@ -17,7 +17,7 @@
     {
       "id": "aislamiento-evalia-no-ve-acme",
       "ok": true,
-      "detail": "vacantes_evalia=['Ejecutivo de ventas B2B 2026-09-03 00:48', 'QA rol staging.orgadmin', 'QA rol staging.owner', 'Ejecutivo de ventas B2B 2026-09-03 00:48', 'Ejecutivo de ventas B2B 2026-09-03 00:46', 'CSM biling\u00fce']"
+      "detail": "vacantes_evalia=['QA rol staging.orgadmin', 'QA rol staging.owner', 'Ejecutivo de ventas B2B 2026-09-03 00:48', 'QA rol staging.orgadmin', 'QA rol staging.owner', 'Ejecutivo de ventas B2B 2026-09-03 00:48', 'Ejecutivo de ventas B2B 2026-09-03 00:46', 'CSM biling\u00fce']"
     },
     {
       "id": "cambio-org-jwt",
@@ -27,12 +27,12 @@
     {
       "id": "aislamiento-acme-no-ve-evalia",
       "ok": true,
-      "detail": "vacantes_acme=['QA rol staging.acme', 'Ops Lead']"
+      "detail": "vacantes_acme=['QA rol staging.acme', 'QA rol staging.acme', 'Ops Lead']"
     },
     {
       "id": "crear-vacante",
       "ok": true,
-      "detail": "reusa jobId=cmtkt4fqk000s11z4t1yce38k"
+      "detail": "jobId=cmtkwyrpc0008qdyc2c4cgimo title=Ejecutivo de ventas B2B 2026-09-03 02:36"
     },
     {
       "id": "asistente-ia",
@@ -52,7 +52,7 @@
     {
       "id": "crear-candidato",
       "ok": true,
-      "detail": "Luc\u00eda M\u00e9ndez 005710 asociada"
+      "detail": "Luc\u00eda M\u00e9ndez 023648 asociada"
     },
     {
       "id": "kanban-movimientos",
@@ -67,7 +67,7 @@
     {
       "id": "nueva-version-scorecard",
       "ok": true,
-      "detail": "antes=Versi\u00f3n 2 \u00b7 Publicado despues=Versi\u00f3n 3 \u00b7 Borrador"
+      "detail": "antes=Versi\u00f3n 1 \u00b7 Publicado despues=Versi\u00f3n 2 \u00b7 Borrador"
     },
     {
       "id": "regresion-visual",
@@ -107,19 +107,15 @@
     {
       "id": "consola-y-red",
       "ok": true,
-      "detail": "console=0 hydration418=2 http=0"
+      "detail": "console=0 hydration418=1 http=0"
     }
   ],
   "consoleErrors": [
-    {
-      "url": "https://evalia-evalia-web.wd75db.easypanel.host/interviews",
-      "text": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
-    },
     {
       "url": "https://evalia-evalia-web.wd75db.easypanel.host/reports",
       "text": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
     }
   ],
   "networkErrors": [],
-  "at": "2026-09-03T00:57:32.327040+00:00"
+  "at": "2026-09-03T02:37:11.457566+00:00"
 }
