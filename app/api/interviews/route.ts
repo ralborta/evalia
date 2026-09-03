@@ -1,5 +1,6 @@
-import { auth } from "@/auth";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { fail } from "@/lib/api-response";
+import { requireOrgContext } from "@/lib/org-context";
 import { prisma } from "@/lib/prisma";
 import { generatePublicToken } from "@/lib/tokens";
 import { NextResponse } from "next/server";
@@ -20,12 +21,11 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user || (session.user.role !== "EVALUATOR" && session.user.role !== "ADMIN")) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
+  try {
+  const ctx = await requireOrgContext({ evaluator: true });
 
   const interviews = await prisma.interview.findMany({
+    where: { organizationId: ctx.organizationId },
     orderBy: { createdAt: "desc" },
     take: 100,
     include: {
@@ -38,6 +38,7 @@ export async function GET() {
 
   const counts = await prisma.interview.groupBy({
     by: ["status"],
+    where: { organizationId: ctx.organizationId },
     _count: { _all: true },
   });
 
@@ -57,13 +58,14 @@ export async function GET() {
       avgScore,
     },
   });
+  } catch (error) {
+    return fail(error);
+  }
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user || (session.user.role !== "EVALUATOR" && session.user.role !== "ADMIN")) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
+  try {
+  const ctx = await requireOrgContext({ evaluator: true, write: true });
 
   const json = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(json);
@@ -77,13 +79,20 @@ export async function POST(req: Request) {
   const audience = body.audience;
   if (audience === InterviewAudience.INTERNAL_AGENT && body.agentUserId) {
     const agent = await prisma.user.findFirst({
-      where: { id: body.agentUserId, role: "AGENT" },
+      where: {
+        id: body.agentUserId,
+        role: "AGENT",
+        memberships: { some: { organizationId: ctx.organizationId } },
+      },
     });
     if (!agent) return NextResponse.json({ error: "Agente no encontrado" }, { status: 400 });
     const cand =
-      (await prisma.candidate.findUnique({ where: { linkedUserId: agent.id } })) ??
+      (await prisma.candidate.findFirst({
+        where: { linkedUserId: agent.id, organizationId: ctx.organizationId },
+      })) ??
       (await prisma.candidate.create({
         data: {
+          organizationId: ctx.organizationId,
           name: agent.name,
           email: agent.email,
           linkedUserId: agent.id,
@@ -93,6 +102,7 @@ export async function POST(req: Request) {
   } else {
     const cand = await prisma.candidate.create({
       data: {
+        organizationId: ctx.organizationId,
         name: body.candidateName,
         email: body.candidateEmail ?? undefined,
         phone: body.candidatePhone ?? undefined,
@@ -102,25 +112,31 @@ export async function POST(req: Request) {
   }
 
   const job =
-    (await prisma.jobPosition.findFirst({ where: { title: body.jobTitle } })) ??
+    (await prisma.jobPosition.findFirst({
+      where: { title: body.jobTitle, organizationId: ctx.organizationId },
+    })) ??
     (await prisma.jobPosition.create({
       data: {
+        organizationId: ctx.organizationId,
         title: body.jobTitle,
         targetLevel: body.targetLevel ?? undefined,
       },
     }));
 
-  const profile = await prisma.evaluationProfile.findUnique({ where: { id: body.evaluationProfileId } });
+  const profile = await prisma.evaluationProfile.findFirst({
+    where: { id: body.evaluationProfileId, organizationId: ctx.organizationId },
+  });
   if (!profile) return NextResponse.json({ error: "Perfil de evaluación no encontrado" }, { status: 400 });
 
   const interview = await prisma.interview.create({
     data: {
+      organizationId: ctx.organizationId,
       publicToken: generatePublicToken(),
       audience,
       candidateId,
       jobPositionId: job.id,
       evaluationProfileId: profile.id,
-      createdById: session.user.id,
+      createdById: ctx.user.id,
       durationMinutes: body.durationMinutes,
       targetLevel: body.targetLevel ?? undefined,
       internalNotes: body.internalNotes ?? undefined,
@@ -145,4 +161,7 @@ export async function POST(req: Request) {
     jobTitle: full?.jobPosition.title ?? body.jobTitle,
     durationMinutes: interview.durationMinutes,
   });
+  } catch (error) {
+    return fail(error);
+  }
 }

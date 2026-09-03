@@ -35,11 +35,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (!user) return null;
           const ok = await bcrypt.compare(password, user.password);
           if (!ok) return null;
+          const membership = await prisma.organizationMember.findFirst({
+            where: { userId: user.id },
+            orderBy: { createdAt: "asc" },
+            select: { organizationId: true },
+          });
           return {
             id: user.id,
             email: user.email,
             name: user.name,
             role: user.role,
+            organizationId: membership?.organizationId,
           };
         } catch (e) {
           console.error("[auth] authorize", e);
@@ -49,10 +55,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.organizationId = user.organizationId;
+      }
+      if (trigger === "update" && session && typeof session === "object" && "organizationId" in session) {
+        const nextOrg = (session as { organizationId?: string }).organizationId;
+        if (typeof nextOrg === "string" && nextOrg.length > 0) {
+          token.organizationId = nextOrg;
+        }
       }
       return token;
     },
@@ -60,6 +73,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as typeof session.user.role;
+        session.user.organizationId = token.organizationId;
       }
       return session;
     },

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
+import { requireOrgContext } from "@/lib/org-context";
 import { personInitials } from "@/lib/initials";
 import Link from "next/link";
 import { ClipboardList, FileText, Link2, Loader2, TrendingUp } from "lucide-react";
@@ -149,6 +150,8 @@ function LevelBars({ distribution }: { distribution: { level: string; pct: numbe
 }
 
 export default async function DashboardPage() {
+  const ctx = await requireOrgContext({ evaluator: true });
+  const orgWhere = { organizationId: ctx.organizationId };
   const weekStart = startOfWeekMonday();
   const weekEnd = addDays(weekStart, 7);
   const prevWeekStart = addDays(weekStart, -7);
@@ -170,43 +173,48 @@ export default async function DashboardPage() {
     evaluationsAgg,
     byLevel,
   ] = await Promise.all([
-    prisma.interview.count(),
-    prisma.interview.count({ where: { status: "COMPLETED" } }),
-    prisma.interview.count({ where: { status: { in: ["IN_PROGRESS", "PROCESSING"] } } }),
-    prisma.interview.count({ where: { NOT: { status: "CREATED" } } }),
-    prisma.interview.count({ where: { createdAt: { gte: weekStart, lt: weekEnd } } }),
-    prisma.interview.count({ where: { createdAt: { gte: prevWeekStart, lt: weekStart } } }),
+    prisma.interview.count({ where: orgWhere }),
+    prisma.interview.count({ where: { ...orgWhere, status: "COMPLETED" } }),
+    prisma.interview.count({ where: { ...orgWhere, status: { in: ["IN_PROGRESS", "PROCESSING"] } } }),
+    prisma.interview.count({ where: { ...orgWhere, NOT: { status: "CREATED" } } }),
+    prisma.interview.count({ where: { ...orgWhere, createdAt: { gte: weekStart, lt: weekEnd } } }),
+    prisma.interview.count({ where: { ...orgWhere, createdAt: { gte: prevWeekStart, lt: weekStart } } }),
     prisma.interview.count({
-      where: { status: "COMPLETED", updatedAt: { gte: weekStart, lt: weekEnd } },
+      where: { ...orgWhere, status: "COMPLETED", updatedAt: { gte: weekStart, lt: weekEnd } },
     }),
     prisma.interview.count({
-      where: { status: "COMPLETED", updatedAt: { gte: prevWeekStart, lt: weekStart } },
+      where: { ...orgWhere, status: "COMPLETED", updatedAt: { gte: prevWeekStart, lt: weekStart } },
     }),
     prisma.interview.count({
       where: {
+        ...orgWhere,
         NOT: { status: "CREATED" },
         updatedAt: { gte: weekStart, lt: weekEnd },
       },
     }),
     prisma.interview.count({
       where: {
+        ...orgWhere,
         NOT: { status: "CREATED" },
         updatedAt: { gte: prevWeekStart, lt: weekStart },
       },
     }),
     prisma.interview.count({
       where: {
+        ...orgWhere,
         status: { in: ["IN_PROGRESS", "PROCESSING"] },
         updatedAt: { gte: weekStart, lt: weekEnd },
       },
     }),
     prisma.interview.count({
       where: {
+        ...orgWhere,
         status: { in: ["IN_PROGRESS", "PROCESSING"] },
         updatedAt: { gte: prevWeekStart, lt: weekStart },
       },
     }),
     prisma.interview.findMany({
+      where: orgWhere,
       orderBy: { createdAt: "desc" },
       take: 15,
       include: {
@@ -216,9 +224,13 @@ export default async function DashboardPage() {
         evaluation: true,
       },
     }),
-    prisma.evaluation.aggregate({ _avg: { overallScore: true } }),
+    prisma.evaluation.aggregate({
+      where: { interview: orgWhere },
+      _avg: { overallScore: true },
+    }),
     prisma.evaluation.groupBy({
       by: ["estimatedLevel"],
+      where: { interview: orgWhere },
       _count: true,
     }),
   ]);
@@ -228,9 +240,9 @@ export default async function DashboardPage() {
       const d0 = addDays(weekStart, i);
       const d1 = addDays(weekStart, i + 1);
       const [c, f] = await Promise.all([
-        prisma.interview.count({ where: { createdAt: { gte: d0, lt: d1 } } }),
+        prisma.interview.count({ where: { ...orgWhere, createdAt: { gte: d0, lt: d1 } } }),
         prisma.interview.count({
-          where: { status: "COMPLETED", updatedAt: { gte: d0, lt: d1 } },
+          where: { ...orgWhere, status: "COMPLETED", updatedAt: { gte: d0, lt: d1 } },
         }),
       ]);
       return { created: c, finished: f };

@@ -1,16 +1,21 @@
-import { auth } from "@/auth";
+import { fail } from "@/lib/api-response";
+import { requireOrgContext } from "@/lib/org-context";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user || (session.user.role !== "EVALUATOR" && session.user.role !== "ADMIN")) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  try {
+    const ctx = await requireOrgContext({ evaluator: true });
+    const agents = await prisma.user.findMany({
+      where: {
+        role: "AGENT",
+        memberships: { some: { organizationId: ctx.organizationId } },
+      },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true },
+    });
+    return NextResponse.json(agents);
+  } catch (error) {
+    return fail(error);
   }
-  const agents = await prisma.user.findMany({
-    where: { role: "AGENT" },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, email: true },
-  });
-  return NextResponse.json(agents);
 }

@@ -106,24 +106,28 @@ function modeLevel(levels: string[]): string | null {
   return best;
 }
 
-async function countDistinctCandidatesWithEvalBetween(from: Date, toExclusive: Date) {
+async function countDistinctCandidatesWithEvalBetween(organizationId: string, from: Date, toExclusive: Date) {
   const evals = await prisma.evaluation.findMany({
-    where: { createdAt: { gte: from, lt: toExclusive } },
+    where: {
+      createdAt: { gte: from, lt: toExclusive },
+      interview: { organizationId },
+    },
     select: { interview: { select: { candidateId: true } } },
   });
   return new Set(evals.map((e) => e.interview.candidateId)).size;
 }
 
-async function countCompletedInterviewsBetween(from: Date, toExclusive: Date) {
+async function countCompletedInterviewsBetween(organizationId: string, from: Date, toExclusive: Date) {
   return prisma.interview.count({
     where: {
+      organizationId,
       status: "COMPLETED",
       finishedAt: { gte: from, lt: toExclusive },
     },
   });
 }
 
-export async function getCandidatesDashboardData(): Promise<CandidatesDashboardPayload> {
+export async function getCandidatesDashboardData(organizationId: string): Promise<CandidatesDashboardPayload> {
   const now = new Date();
   const d30 = addDays(now, -30);
   const d60 = addDays(now, -60);
@@ -132,7 +136,7 @@ export async function getCandidatesDashboardData(): Promise<CandidatesDashboardP
   const [list, lastEval, pendingPipeline, pendingToday, activeLast30, activePrev30, intLast30, intPrev30] =
     await Promise.all([
       prisma.candidate.findMany({
-        where: { interviews: { some: {} } },
+        where: { organizationId, interviews: { some: { organizationId } } },
         orderBy: { name: "asc" },
         take: 500,
         include: {
@@ -145,6 +149,7 @@ export async function getCandidatesDashboardData(): Promise<CandidatesDashboardP
         },
       }),
       prisma.evaluation.findFirst({
+        where: { interview: { organizationId } },
         orderBy: { createdAt: "desc" },
         select: {
           createdAt: true,
@@ -152,18 +157,19 @@ export async function getCandidatesDashboardData(): Promise<CandidatesDashboardP
         },
       }),
       prisma.interview.count({
-        where: { status: { in: ["CREATED", "LINK_READY", "IN_PROGRESS", "PROCESSING"] } },
+        where: { organizationId, status: { in: ["CREATED", "LINK_READY", "IN_PROGRESS", "PROCESSING"] } },
       }),
       prisma.interview.count({
         where: {
+          organizationId,
           status: { in: ["LINK_READY", "IN_PROGRESS"] },
           OR: [{ updatedAt: { gte: today } }, { createdAt: { gte: today } }],
         },
       }),
-      countDistinctCandidatesWithEvalBetween(d30, now),
-      countDistinctCandidatesWithEvalBetween(d60, d30),
-      countCompletedInterviewsBetween(d30, now),
-      countCompletedInterviewsBetween(d60, d30),
+      countDistinctCandidatesWithEvalBetween(organizationId, d30, now),
+      countDistinctCandidatesWithEvalBetween(organizationId, d60, d30),
+      countCompletedInterviewsBetween(organizationId, d30, now),
+      countCompletedInterviewsBetween(organizationId, d60, d30),
     ]);
 
   const rows: CandidateDashboardRow[] = [];

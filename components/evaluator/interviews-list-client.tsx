@@ -66,6 +66,7 @@ function avatarColors(seed: string) {
 function formatInterviewDate(iso: string) {
   const d = new Date(iso);
   return new Intl.DateTimeFormat("es", {
+    timeZone: "UTC",
     day: "numeric",
     month: "short",
     year: "numeric",

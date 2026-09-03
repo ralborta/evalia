@@ -21,6 +21,12 @@ export async function runSeed() {
   const passwordDemo = await bcrypt.hash("demo12345", 10);
   const passwordAdmin = await bcrypt.hash("admin", 10);
 
+  const org = await prisma.organization.upsert({
+    where: { slug: "evalia" },
+    update: {},
+    create: { id: "org_evalia_inicial", name: "EvalIA", slug: "evalia" },
+  });
+
   await prisma.user.upsert({
     where: { email: "admin@evalia.app" },
     update: {
@@ -57,6 +63,21 @@ export async function runSeed() {
     },
   });
 
+  const users = await prisma.user.findMany({
+    where: { email: { in: ["admin@evalia.app", "evaluador@evalia.app", "agente@evalia.app"] } },
+  });
+  for (const user of users) {
+    await prisma.organizationMember.upsert({
+      where: { organizationId_userId: { organizationId: org.id, userId: user.id } },
+      update: {},
+      create: {
+        organizationId: org.id,
+        userId: user.id,
+        role: user.role === "ADMIN" ? "OWNER" : user.role === "AGENT" ? "VIEWER" : "RECRUITER",
+      },
+    });
+  }
+
   const profiles = [
     {
       key: "general_english",
@@ -86,14 +107,14 @@ export async function runSeed() {
 
   for (const p of profiles) {
     await prisma.evaluationProfile.upsert({
-      where: { key: p.key },
+      where: { organizationId_key: { organizationId: org.id, key: p.key } },
       update: { name: p.name, description: p.description, configJson: p.configJson },
-      create: p,
+      create: { ...p, organizationId: org.id },
     });
   }
 
   const profile = await prisma.evaluationProfile.findUniqueOrThrow({
-    where: { key: "customer_support" },
+    where: { organizationId_key: { organizationId: org.id, key: "customer_support" } },
   });
 
   const job = await prisma.jobPosition.upsert({
@@ -101,6 +122,7 @@ export async function runSeed() {
     update: {},
     create: {
       id: "seed-job-cs",
+      organizationId: org.id,
       title: "Customer Support Agent",
       description: "Soporte L2",
       targetLevel: EnglishLevel.B2,
@@ -112,6 +134,7 @@ export async function runSeed() {
     update: {},
     create: {
       id: "seed-candidate-ext",
+      organizationId: org.id,
       name: "María García",
       email: "maria.externa@example.com",
     },
@@ -122,6 +145,7 @@ export async function runSeed() {
     update: { linkedUserId: agentUser.id },
     create: {
       id: "seed-candidate-agent",
+      organizationId: org.id,
       name: agentUser.name,
       email: agentUser.email!,
       linkedUserId: agentUser.id,
@@ -133,6 +157,7 @@ export async function runSeed() {
     update: {},
     create: {
       publicToken: SEED_TOKEN_COMPLETED,
+      organizationId: org.id,
       audience: InterviewAudience.EXTERNAL_CANDIDATE,
       candidateId: extCandidate.id,
       jobPositionId: job.id,
@@ -182,6 +207,7 @@ export async function runSeed() {
     update: {},
     create: {
       publicToken: SEED_TOKEN_AGENT,
+      organizationId: org.id,
       audience: InterviewAudience.INTERNAL_AGENT,
       candidateId: agentCandidate.id,
       jobPositionId: job.id,

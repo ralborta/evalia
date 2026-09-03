@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { EvaluationProfilesClient } from "@/components/evaluator/evaluation-profiles-client";
 import { getProfileUiMeta } from "@/lib/evaluation-profile-ui";
+import { requireOrgContext } from "@/lib/org-context";
 
 function startOfWeekMonday() {
   const d = new Date();
@@ -12,14 +13,16 @@ function startOfWeekMonday() {
 }
 
 export default async function EvaluationProfilesPage() {
+  const ctx = await requireOrgContext({ evaluator: true });
   const weekStart = startOfWeekMonday();
 
   const [profiles, interviewsThisWeek] = await Promise.all([
     prisma.evaluationProfile.findMany({
+      where: { organizationId: ctx.organizationId },
       orderBy: { name: "asc" },
       include: { _count: { select: { interviews: true } } },
     }),
-    prisma.interview.count({ where: { createdAt: { gte: weekStart } } }),
+    prisma.interview.count({ where: { organizationId: ctx.organizationId, createdAt: { gte: weekStart } } }),
   ]);
 
   const maxCount = Math.max(0, ...profiles.map((p) => p._count.interviews));

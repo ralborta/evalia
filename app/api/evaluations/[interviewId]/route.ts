@@ -1,17 +1,19 @@
-import { auth } from "@/auth";
+import { fail } from "@/lib/api-response";
+import { requireInterviewInOrg } from "@/lib/require-org-interview";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ interviewId: string }> }) {
-  const session = await auth();
-  if (!session?.user || (session.user.role !== "EVALUATOR" && session.user.role !== "ADMIN")) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  try {
+    const { interviewId } = await ctx.params;
+    await requireInterviewInOrg(interviewId);
+    const evaluation = await prisma.evaluation.findUnique({
+      where: { interviewId },
+      include: { metrics: true },
+    });
+    if (!evaluation) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
+    return NextResponse.json(evaluation);
+  } catch (error) {
+    return fail(error);
   }
-  const { interviewId } = await ctx.params;
-  const evaluation = await prisma.evaluation.findUnique({
-    where: { interviewId },
-    include: { metrics: true },
-  });
-  if (!evaluation) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
-  return NextResponse.json(evaluation);
 }

@@ -35,7 +35,7 @@ async function main() {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.create({
+  const admin = await prisma.user.create({
     data: {
       email,
       name: process.env.INIT_ADMIN_NAME?.trim() || "Admin EvalIA",
@@ -43,7 +43,15 @@ async function main() {
       role: UserRole.ADMIN,
     },
   });
-  console.log("Instalación vacía lista: se creó un único usuario ADMIN.");
+  const org = await prisma.organization.upsert({
+    where: { slug: "evalia" },
+    update: {},
+    create: { id: "org_evalia_inicial", name: "EvalIA", slug: "evalia" },
+  });
+  await prisma.organizationMember.create({
+    data: { organizationId: org.id, userId: admin.id, role: "OWNER" },
+  });
+  console.log("Instalación vacía lista: se creó un único usuario ADMIN y la organización inicial.");
 }
 
 main()

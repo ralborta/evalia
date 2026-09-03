@@ -109,12 +109,6 @@ export default function NewInterviewPage() {
       .catch(() => setAgents([]));
   }, []);
 
-  useEffect(() => {
-    if (!form.agentUserId) return;
-    const a = agents.find((x) => x.id === form.agentUserId);
-    if (a) setForm((f) => ({ ...f, candidateName: a.name }));
-  }, [form.agentUserId, agents]);
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -219,7 +213,11 @@ export default function NewInterviewPage() {
                 <select
                   className={selectClass}
                   value={form.agentUserId}
-                  onChange={(e) => setForm((f) => ({ ...f, agentUserId: e.target.value }))}
+                  onChange={(e) => {
+                    const agentUserId = e.target.value;
+                    const a = agents.find((x) => x.id === agentUserId);
+                    setForm((f) => ({ ...f, agentUserId, candidateName: a?.name ?? f.candidateName }));
+                  }}
                   required
                 >
                   <option value="">Seleccioná un agente…</option>

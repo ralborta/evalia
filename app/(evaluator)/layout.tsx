@@ -7,13 +7,30 @@ import { EvaluatorNav } from "@/components/app-shell/evaluator-nav";
 import { RefreshOnFocus } from "@/components/evaluator/refresh-on-focus";
 import { prisma } from "@/lib/prisma";
 import { personInitials } from "@/lib/initials";
+import { requireOrgContext } from "@/lib/org-context";
+import { OrgSwitcher } from "@/components/app-shell/org-switcher";
 
 export default async function EvaluatorLayout({ children }: { children: ReactNode }) {
   const session = await auth();
   const name = session?.user?.name ?? "Evaluador";
-  const processingCount = await prisma.interview.count({
-    where: { status: { in: ["PROCESSING", "IN_PROGRESS"] } },
-  });
+  let processingCount = 0;
+  let orgName = "EvalIA";
+  let orgs: { organizationId: string; organizationName: string }[] = [];
+  let activeOrgId: string | undefined;
+  try {
+    const ctx = await requireOrgContext({ evaluator: true });
+    activeOrgId = ctx.organizationId;
+    orgName = ctx.memberships.find((m) => m.organizationId === ctx.organizationId)?.organizationName ?? "EvalIA";
+    orgs = ctx.memberships.map((m) => ({
+      organizationId: m.organizationId,
+      organizationName: m.organizationName,
+    }));
+    processingCount = await prisma.interview.count({
+      where: { organizationId: ctx.organizationId, status: { in: ["PROCESSING", "IN_PROGRESS"] } },
+    });
+  } catch {
+    processingCount = 0;
+  }
 
   return (
     <div className="flex min-h-full bg-[#f4f6f9]">
@@ -49,10 +66,13 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
               <p className="text-lg font-semibold text-slate-900">
                 ¡Hola, {name}! <span className="font-normal">👋</span>
               </p>
-              <p className="mt-0.5 text-sm text-slate-500">Aquí tienes el resumen de tus evaluaciones de idioma.</p>
+              <p className="mt-0.5 text-sm text-slate-500">
+                {orgName} · evaluaciones de idioma y vacantes Talent.
+              </p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-4">
+            {activeOrgId ? <OrgSwitcher organizations={orgs} activeOrganizationId={activeOrgId} /> : null}
             <Link
               href="/dashboard"
               className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
@@ -76,6 +96,7 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
             </div>
           </div>
         </header>
+        <EvaluatorNav variant="mobile" />
         <main className="flex-1 p-5 md:p-8">
           <RefreshOnFocus />
           {children}

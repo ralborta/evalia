@@ -10,6 +10,7 @@ import {
   BookOpen,
   Users,
   Settings,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const items: {
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/interviews/new", label: "Nueva evaluación", icon: PlusCircle },
   { href: "/interviews", label: "Entrevistas", icon: ClipboardList },
+  { href: "/jobs", label: "Vacantes", icon: Briefcase },
   { href: "/candidates", label: "Candidatos", icon: Users },
   { href: "/evaluation-profiles", label: "Perfiles", icon: BookOpen },
   { href: "/reports", label: "Reportes", icon: FileBarChart },
@@ -33,8 +35,33 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function EvaluatorNav() {
+export function EvaluatorNav({ variant = "sidebar" }: { variant?: "sidebar" | "mobile" }) {
   const pathname = usePathname();
+
+  if (variant === "mobile") {
+    return (
+      <nav
+        data-testid="mobile-nav"
+        className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 md:hidden"
+      >
+        {items.map(({ href, label, exact }) => {
+          const active = isActive(pathname, href, exact);
+          return (
+            <Link
+              key={href + label}
+              href={href}
+              className={cn(
+                "shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold",
+                active ? "bg-blue-50 text-blue-700" : "text-slate-600",
+              )}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+    );
+  }
 
   return (
     <nav className="flex flex-1 flex-col gap-0.5 px-3 py-4 text-[15px]">

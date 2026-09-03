@@ -8,6 +8,8 @@ const evaluatorPrefixes = [
   "/evaluation-profiles",
   "/candidates",
   "/settings",
+  "/jobs",
+  "/applications",
 ];
 const agentPrefixes = ["/agent"];
 
@@ -44,6 +46,10 @@ export const config = {
     "/evaluation-profiles/:path*",
     "/candidates/:path*",
     "/settings/:path*",
+    "/jobs",
+    "/jobs/:path*",
+    "/applications",
+    "/applications/:path*",
     "/agent/:path*",
   ],
 };

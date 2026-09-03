@@ -110,6 +110,7 @@ function mapRow(e: {
 }
 
 export async function getReportsDashboardData(params: {
+  organizationId: string;
   fromStr?: string;
   toStr?: string;
 }): Promise<ReportsDashboardPayload> {
@@ -132,7 +133,7 @@ export async function getReportsDashboardData(params: {
     prisma.evaluation.findMany({
       where: {
         createdAt: { gte: from, lte: to },
-        interview: { status: "COMPLETED" },
+        interview: { status: "COMPLETED", organizationId: params.organizationId },
       },
       include: {
         interview: { include: { candidate: true, jobPosition: true } },
@@ -142,7 +143,7 @@ export async function getReportsDashboardData(params: {
     prisma.evaluation.findMany({
       where: {
         createdAt: { gte: prevFrom, lte: prevTo },
-        interview: { status: "COMPLETED" },
+        interview: { status: "COMPLETED", organizationId: params.organizationId },
       },
       select: { overallScore: true },
     }),
