@@ -27,29 +27,33 @@ const languageItem = z.preprocess((value) => {
   level: z.string().max(80).optional().nullable(),
 }));
 
+const experienceItem = z.preprocess((value) => {
+  if (typeof value === "string") {
+    return { title: value, company: null, start: null, end: null, summary: value };
+  }
+  return value;
+}, z.object({
+  title: z.string().max(200).optional().nullable(),
+  company: z.string().max(200).optional().nullable(),
+  start: z.string().max(40).optional().nullable(),
+  end: z.string().max(40).optional().nullable(),
+  summary: z.string().max(2000).optional().nullable(),
+}));
+
+const educationItem = z.preprocess((value) => {
+  if (typeof value === "string") {
+    return { degree: value, institution: null, year: null };
+  }
+  return value;
+}, z.object({
+  degree: z.string().max(200).optional().nullable(),
+  institution: z.string().max(200).optional().nullable(),
+  year: z.string().max(40).optional().nullable(),
+}));
+
 export const CvStructuredProfileSchema = z.object({
-  experience: z
-    .array(
-      z.object({
-        title: z.string().max(200).optional().nullable(),
-        company: z.string().max(200).optional().nullable(),
-        start: z.string().max(40).optional().nullable(),
-        end: z.string().max(40).optional().nullable(),
-        summary: z.string().max(2000).optional().nullable(),
-      }),
-    )
-    .max(40)
-    .default([]),
-  education: z
-    .array(
-      z.object({
-        degree: z.string().max(200).optional().nullable(),
-        institution: z.string().max(200).optional().nullable(),
-        year: z.string().max(40).optional().nullable(),
-      }),
-    )
-    .max(30)
-    .default([]),
+  experience: z.array(experienceItem).max(40).default([]),
+  education: z.array(educationItem).max(30).default([]),
   certifications: z.array(stringListItem).max(40).default([]),
   tools: z.array(stringListItem).max(80).default([]),
   languages: z.array(languageItem).max(20).default([]),
