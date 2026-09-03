@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireEvaluatorPage } from "@/lib/require-evaluator-page";
 import { PipelineKanban } from "@/components/talent/pipeline-kanban";
+import { CvUploadPanel } from "@/components/talent/cv-upload-panel";
+import { CvAnalysisPanel } from "@/components/talent/cv-analysis-panel";
 import { canWriteOrg } from "@/lib/org-context";
 
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,13 +39,25 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900">CV y análisis</h2>
+        <div className="mt-4 space-y-6">
+          <CvUploadPanel applicationId={application.id} canWrite={canWrite} />
+          <div className="border-t border-slate-100 pt-5">
+            <CvAnalysisPanel applicationId={application.id} canWrite={canWrite} />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">Mover de etapa</h2>
         <div className="mt-3">
           <PipelineKanban
             jobId={application.jobId}
             canWrite={canWrite}
             stages={application.job.stages}
-            applications={[{ id: application.id, candidateName: application.candidate.name, stageId: application.stageId }]}
+            applications={[
+              { id: application.id, candidateName: application.candidate.name, stageId: application.stageId },
+            ]}
           />
         </div>
       </section>
@@ -69,7 +83,8 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         <h2 className="text-base font-semibold text-slate-900">Scorecard de esta candidatura</h2>
         {application.scorecard ? (
           <p className="mt-2 text-sm text-slate-600">
-            {application.scorecard.name} · v{application.scorecard.version} · {application.scorecard.criteria.length} criterios
+            {application.scorecard.name} · v{application.scorecard.version} ·{" "}
+            {application.scorecard.criteria.length} criterios
           </p>
         ) : (
           <p className="mt-2 text-sm text-slate-500">

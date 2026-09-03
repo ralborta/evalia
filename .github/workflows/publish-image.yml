@@ -7,6 +7,7 @@ on:
     branches:
       - infra/easypanel-migration
       - feature/evalia-talent-foundation
+      - feature/evalia-talent-cv-ranking
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -42,7 +43,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Image metadata
+      - name: Image metadata (web)
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -52,19 +53,44 @@ jobs:
             type=raw,value=staging,enable=${{ github.ref == 'refs/heads/infra/easypanel-migration' }}
             type=raw,value=talent-foundation,enable=${{ github.ref == 'refs/heads/feature/evalia-talent-foundation' }}
             type=raw,value=talent-foundation-${{ github.sha }},enable=${{ github.ref == 'refs/heads/feature/evalia-talent-foundation' }}
+            type=raw,value=talent-cv,enable=${{ github.ref == 'refs/heads/feature/evalia-talent-cv-ranking' }}
+            type=raw,value=talent-cv-${{ github.sha }},enable=${{ github.ref == 'refs/heads/feature/evalia-talent-cv-ranking' }}
             type=raw,value=${{ github.sha }}
 
-      - name: Build and push
+      - name: Build and push web (runner)
         id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
+          target: runner
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Solo valores públicos no secretos. La URL real se inyecta en runtime
-          # (AUTH_URL / NEXTAUTH_URL / NEXT_PUBLIC_APP_URL).
+          build-args: |
+            NEXT_PUBLIC_APP_URL=
+          provenance: false
+          sbom: false
+
+      - name: Image metadata (worker)
+        id: meta-worker
+        if: github.ref == 'refs/heads/feature/evalia-talent-cv-ranking'
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=talent-cv-worker
+            type=raw,value=talent-cv-worker-${{ github.sha }}
+
+      - name: Build and push worker
+        if: github.ref == 'refs/heads/feature/evalia-talent-cv-ranking'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: worker
+          push: true
+          tags: ${{ steps.meta-worker.outputs.tags }}
           build-args: |
             NEXT_PUBLIC_APP_URL=
           provenance: false
