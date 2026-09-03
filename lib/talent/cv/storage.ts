@@ -1,6 +1,7 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import type IORedis from "ioredis";
 
 export type DocumentStorage = {
   put(key: string, data: Buffer, contentType: string): Promise<void>;
@@ -21,6 +22,21 @@ function signingSecret() {
 
 function redisBlobKey(storageKey: string) {
   return `cvdoc:blob:${storageKey}`;
+}
+
+let blobRedis: IORedis | null = null;
+
+async function getBlobRedis(): Promise<IORedis | null> {
+  const url = process.env.REDIS_URL;
+  if (!url) return null;
+  if (blobRedis) return blobRedis;
+  const IORedisCtor = (await import("ioredis")).default;
+  blobRedis = new IORedisCtor(url, {
+    maxRetriesPerRequest: 1,
+    enableReadyCheck: true,
+    lazyConnect: false,
+  });
+  return blobRedis;
 }
 
 export function buildStorageKey(organizationId: string, documentId: string) {
@@ -56,10 +72,9 @@ export function maybeAnonymizeForRanking(text: string): string {
 }
 
 /**
- * Almacenamiento privado en disco + espejo en Redis.
- * Redis cubre el caso EasyPanel donde volúmenes con el mismo nombre no se
- * comparten entre evalia-web y evalia-worker. El FS sigue siendo la fuente
- * canónica local; Redis permite al worker recuperar el blob sin PII en logs.
+ * Disco local + espejo binario en Redis (`cvdoc:blob:*`).
+ * Necesario en EasyPanel: web y worker no comparten el mismo volumen Docker.
+ * No registra contenido ni URLs firmadas.
  */
 export class FsDocumentStorage implements DocumentStorage {
   constructor(private readonly root = docsRoot()) {}
@@ -71,24 +86,15 @@ export class FsDocumentStorage implements DocumentStorage {
     return join(this.root, key);
   }
 
-  private async redis() {
-    if (!process.env.REDIS_URL) return null;
-    const { getRedisConnection } = await import("@/lib/talent/cv/queue");
-    return getRedisConnection();
-  }
-
   async put(key: string, data: Buffer, _contentType: string): Promise<void> {
     const path = this.abs(key);
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, data);
     try {
-      const redis = await this.redis();
-      if (redis) {
-        // Sin TTL: el worker debe poder reprocesar; delete() limpia.
-        await redis.set(redisBlobKey(key), data);
-      }
-    } catch {
-      // El put en disco ya es suficiente si web y worker comparten FS.
+      const redis = await getBlobRedis();
+      if (redis) await redis.set(redisBlobKey(key), data);
+    } catch (error) {
+      console.error("[storage] fallo espejo Redis (sin PII)", (error as Error)?.name || "ERR");
     }
   }
 
@@ -96,19 +102,18 @@ export class FsDocumentStorage implements DocumentStorage {
     try {
       return await readFile(this.abs(key));
     } catch {
-      const redis = await this.redis();
+      const redis = await getBlobRedis();
       if (!redis) throw new Error("documento no encontrado en almacenamiento");
       const raw = await redis.getBuffer(redisBlobKey(key));
       if (!raw || raw.length === 0) {
         throw new Error("documento no encontrado en almacenamiento");
       }
-      // Hidratar FS local del worker para lecturas siguientes / OCR.
       try {
         const path = this.abs(key);
         await mkdir(dirname(path), { recursive: true });
         await writeFile(path, raw);
       } catch {
-        // no bloquear si el FS local no es escribible
+        // ok si el FS local no es escribible
       }
       return raw;
     }
@@ -121,7 +126,7 @@ export class FsDocumentStorage implements DocumentStorage {
       // idempotente
     }
     try {
-      const redis = await this.redis();
+      const redis = await getBlobRedis();
       if (redis) await redis.del(redisBlobKey(key));
     } catch {
       // idempotente

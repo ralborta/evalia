@@ -204,6 +204,8 @@ export async function reprocessDocument(input: {
     entityId: doc.id,
   });
 
-  await enqueueDocument(doc.id, input.organizationId, doc.version);
+  // jobId nuevo para forzar reintento aunque exista un job fallido previo
+  const reprocessVersion = doc.version * 1000 + (Date.now() % 1000);
+  await enqueueDocument(doc.id, input.organizationId, reprocessVersion);
   return doc;
 }
