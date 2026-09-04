@@ -39,14 +39,14 @@ export function JobRankingPanel({ jobId }: { jobId: string }) {
   }, [load]);
 
   return (
-    <div className="space-y-3">
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+    <div className="space-y-space-sm">
+      {error ? <p className="text-body-sm text-error">{error}</p> : null}
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">Todavía no hay candidaturas para rankear.</p>
+        <p className="text-body-sm text-on-surface-variant">Todavía no hay candidaturas para rankear.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <div className="overflow-x-auto rounded-xl border border-outline-variant/30 bg-surface-container shadow-md">
+          <table className="min-w-full text-left text-body-sm">
+            <thead className="bg-surface-container-lowest font-label-mono text-label-mono-sm uppercase tracking-wide text-on-surface-variant">
               <tr>
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">Candidato</th>
@@ -58,14 +58,14 @@ export function JobRankingPanel({ jobId }: { jobId: string }) {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.applicationId} className="border-t border-slate-100">
-                  <td className="px-4 py-3 tabular-nums text-slate-500">{row.rank}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">
-                    <Link href={`/applications/${row.applicationId}`} className="hover:text-blue-700">
+                <tr key={row.applicationId} className="border-t border-outline-variant/20 hover:bg-surface-container-high/50">
+                  <td className="px-4 py-3 tabular-nums text-on-surface-variant">{row.rank}</td>
+                  <td className="px-4 py-3 font-medium text-on-surface">
+                    <Link href={`/applications/${row.applicationId}`} className="hover:text-primary">
                       {row.candidateName}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 tabular-nums">
+                  <td className="px-4 py-3 tabular-nums text-on-surface">
                     {row.overallScore != null ? row.overallScore.toFixed(1) : "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -73,10 +73,10 @@ export function JobRankingPanel({ jobId }: { jobId: string }) {
                       {row.excludingOutcome}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-xs text-amber-800">
+                  <td className="px-4 py-3 text-body-sm text-tertiary">
                     {row.warnings.length ? row.warnings.join(" · ") : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{row.explanationVsNeighbor}</td>
+                  <td className="px-4 py-3 text-on-surface-variant">{row.explanationVsNeighbor}</td>
                 </tr>
               ))}
             </tbody>

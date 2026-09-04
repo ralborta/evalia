@@ -38,7 +38,7 @@ export function OrgSwitcher({
             router.refresh();
           });
         }}
-        className="h-10 max-w-[14rem] truncate rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm disabled:opacity-80"
+        className="h-9 max-w-[14rem] truncate rounded-lg border border-outline-variant/50 bg-surface-container-lowest px-3 text-body-sm font-medium text-on-surface shadow-sm disabled:opacity-80"
       >
         {organizations.map((org) => (
           <option key={org.organizationId} value={org.organizationId}>

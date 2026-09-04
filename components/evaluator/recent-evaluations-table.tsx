@@ -40,12 +40,12 @@ export function RecentEvaluationsTable({ rows }: { rows: RecentRow[] }) {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-slate-900">Evaluaciones recientes</h2>
+      <div className="mb-space-md flex flex-wrap items-center justify-between gap-space-sm">
+        <h2 className="font-headline text-headline-md font-semibold text-on-surface">Evaluaciones recientes</h2>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none ring-blue-500/30 focus:ring-2"
+          className="rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-space-sm py-2 text-body-sm text-on-surface outline-none focus:ring-1 focus:ring-primary"
         >
           {FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
@@ -54,9 +54,9 @@ export function RecentEvaluationsTable({ rows }: { rows: RecentRow[] }) {
           ))}
         </select>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-slate-100">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+      <div className="overflow-x-auto rounded-xl border border-outline-variant/30">
+        <table className="w-full min-w-[720px] text-left text-body-sm">
+          <thead className="border-b border-outline-variant/30 bg-surface-container-lowest font-label-mono text-label-mono-sm uppercase tracking-wider text-on-surface-variant">
             <tr>
               <th className="px-4 py-3">Candidato</th>
               <th className="px-4 py-3">Cargo</th>
@@ -69,24 +69,30 @@ export function RecentEvaluationsTable({ rows }: { rows: RecentRow[] }) {
           </thead>
           <tbody>
             {filtered.map((row) => (
-              <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
+              <tr
+                key={row.id}
+                className="border-b border-outline-variant/20 last:border-0 hover:bg-surface-container-high/60"
+              >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-container/30 text-xs font-bold text-primary">
                       {row.initials}
                     </span>
-                    <span className="font-medium text-slate-900">{row.candidateName}</span>
+                    <span className="font-medium text-on-surface">{row.candidateName}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{row.jobTitle}</td>
-                <td className="px-4 py-3 text-slate-600">{row.profileName}</td>
+                <td className="px-4 py-3 text-on-surface-variant">{row.jobTitle}</td>
+                <td className="px-4 py-3 text-on-surface-variant">{row.profileName}</td>
                 <td className="px-4 py-3">
                   <Badge variant={row.badgeVariant}>{row.statusLabel}</Badge>
                 </td>
-                <td className="px-4 py-3 font-medium tabular-nums text-slate-800">{row.score ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{row.level ?? "—"}</td>
+                <td className="px-4 py-3 font-medium tabular-nums text-on-surface">{row.score ?? "—"}</td>
+                <td className="px-4 py-3 text-on-surface-variant">{row.level ?? "—"}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/interviews/${row.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+                  <Link
+                    href={`/interviews/${row.id}`}
+                    className="text-body-sm font-semibold text-primary hover:text-primary-fixed-dim"
+                  >
                     Ver evaluación &gt;
                   </Link>
                 </td>
@@ -94,7 +100,7 @@ export function RecentEvaluationsTable({ rows }: { rows: RecentRow[] }) {
             ))}
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-12 text-center text-on-surface-variant">
                   No hay filas con este estado.
                 </td>
               </tr>

@@ -27,26 +27,26 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const canWrite = canWriteOrg(ctx.memberRole);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-space-lg">
+      <div className="flex flex-col gap-space-sm sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Link href="/jobs" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <Link href="/jobs" className="text-body-sm font-semibold text-primary hover:text-primary-fixed-dim">
             ← Vacantes
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">{job.title}</h1>
-          <p className="mt-1 text-sm text-slate-600">{job.location || "Sin ubicación"}</p>
+          <h1 className="mt-space-2xs font-headline text-headline-xl font-bold text-on-surface">{job.title}</h1>
+          <p className="mt-1 text-body-md text-on-surface-variant">{job.location || "Sin ubicación"}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/jobs/${job.id}/scorecard`}
-            className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+            className="inline-flex rounded-lg border border-outline-variant/40 bg-surface-container px-4 py-2 text-body-sm font-semibold text-on-surface hover:bg-surface-container-high"
           >
             Editar scorecard
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-space-md lg:grid-cols-2">
         <JobForm
           jobId={job.id}
           canWrite={canWrite}
@@ -57,20 +57,20 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             status: job.status,
           }}
         />
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">Scorecard publicado</h2>
+        <div className="rounded-xl border border-outline-variant/30 bg-surface-container p-6 shadow-md">
+          <h2 className="font-headline text-headline-md font-semibold text-on-surface">Scorecard publicado</h2>
           {job.publishedScorecard ? (
-            <div className="mt-3 space-y-2 text-sm">
+            <div className="mt-3 space-y-2 text-body-sm text-on-surface">
               <p>
                 {job.publishedScorecard.name} · v{job.publishedScorecard.version}
               </p>
-              <p className="text-slate-500">
+              <p className="text-on-surface-variant">
                 {job.publishedScorecard.criteria.filter((c) => c.type === "EXCLUDING").length} excluyentes ·{" "}
                 {job.publishedScorecard.criteria.filter((c) => c.type === "SCORED").length} criterios con peso
               </p>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-slate-500">
+            <p className="mt-3 text-body-sm text-on-surface-variant">
               Aún no hay una versión publicada. Las candidaturas nuevas no quedan atadas a un scorecard histórico.
             </p>
           )}
@@ -78,14 +78,14 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">Ranking por CV</h2>
+      <section className="space-y-space-sm">
+        <h2 className="font-headline text-headline-lg font-semibold text-on-surface">Ranking por CV</h2>
         <JobRankingPanel jobId={job.id} />
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-space-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Pipeline</h2>
+          <h2 className="font-headline text-headline-lg font-semibold text-on-surface">Pipeline</h2>
           <Badge variant="secondary">{job.applications.length} candidaturas</Badge>
         </div>
         <PipelineKanban

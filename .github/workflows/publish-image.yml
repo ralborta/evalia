@@ -8,6 +8,7 @@ on:
       - infra/easypanel-migration
       - feature/evalia-talent-foundation
       - feature/evalia-talent-cv-ranking
+      - feature/evalia-stitch-ui
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -55,6 +56,8 @@ jobs:
             type=raw,value=talent-foundation-${{ github.sha }},enable=${{ github.ref == 'refs/heads/feature/evalia-talent-foundation' }}
             type=raw,value=talent-cv,enable=${{ github.ref == 'refs/heads/feature/evalia-talent-cv-ranking' }}
             type=raw,value=talent-cv-${{ github.sha }},enable=${{ github.ref == 'refs/heads/feature/evalia-talent-cv-ranking' }}
+            type=raw,value=talent-stitch,enable=${{ github.ref == 'refs/heads/feature/evalia-stitch-ui' }}
+            type=raw,value=talent-stitch-${{ github.sha }},enable=${{ github.ref == 'refs/heads/feature/evalia-stitch-ui' }}
             type=raw,value=${{ github.sha }}
 
       - name: Build and push web (runner)

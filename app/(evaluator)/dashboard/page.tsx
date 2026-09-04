@@ -62,21 +62,21 @@ function ScoreDonut({ value, max = 100 }: { value: number; max?: number }) {
   return (
     <div className="relative flex h-44 w-44 items-center justify-center">
       <svg viewBox="0 0 112 112" className="h-full w-full -rotate-90">
-        <circle cx="56" cy="56" r={r} fill="none" stroke="#e2e8f0" strokeWidth="12" />
+        <circle cx="56" cy="56" r={r} fill="none" stroke="#2d3449" strokeWidth="12" />
         <circle
           cx="56"
           cy="56"
           r={r}
           fill="none"
-          stroke="#2563eb"
+          stroke="#4f46e5"
           strokeWidth="12"
           strokeLinecap="round"
           strokeDasharray={`${dash} ${gap}`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold tabular-nums text-slate-900">{value}</span>
-        <span className="text-sm text-slate-500">/ {max}</span>
+        <span className="text-3xl font-bold tabular-nums text-on-surface">{value}</span>
+        <span className="text-sm text-on-surface-variant">/ {max}</span>
       </div>
     </div>
   );
@@ -114,15 +114,15 @@ function WeeklyActivityChart({
       {[0, 0.25, 0.5, 0.75, 1].map((t) => {
         const y = pad + innerH * (1 - t);
         return (
-          <line key={t} x1={pad} y1={y} x2={w - pad} y2={y} stroke="#f1f5f9" strokeWidth="1" />
+          <line key={t} x1={pad} y1={y} x2={w - pad} y2={y} stroke="#2d3449" strokeWidth="1" />
         );
       })}
-      <polyline fill="none" stroke="#2563eb" strokeWidth="2.5" points={createdPts} strokeLinejoin="round" />
-      <polyline fill="none" stroke="#22c55e" strokeWidth="2.5" points={finishedPts} strokeLinejoin="round" />
+      <polyline fill="none" stroke="#c3c0ff" strokeWidth="2.5" points={createdPts} strokeLinejoin="round" />
+      <polyline fill="none" stroke="#4edea3" strokeWidth="2.5" points={finishedPts} strokeLinejoin="round" />
       {created.map((_, i) => {
         const x = pad + i * step;
         return (
-          <text key={i} x={x} y={h - 2} textAnchor="middle" className="fill-slate-400 text-[10px] font-medium">
+          <text key={i} x={x} y={h - 2} textAnchor="middle" className="fill-on-surface-variant text-[10px] font-medium">
             {DAY_LABELS[i]}
           </text>
         );
@@ -136,12 +136,12 @@ function LevelBars({ distribution }: { distribution: { level: string; pct: numbe
     <div className="space-y-3">
       {distribution.map(({ level, pct }) => (
         <div key={level}>
-          <div className="mb-1 flex justify-between text-xs font-medium text-slate-600">
+          <div className="mb-1 flex justify-between text-xs font-medium text-on-surface-variant">
             <span>{level}</span>
             <span>{pct}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-2 overflow-hidden rounded-full bg-surface-container-lowest">
+            <div className="h-full rounded-full bg-primary-container transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
       ))}
@@ -283,83 +283,110 @@ export default async function DashboardPage() {
   const t4 = trendCopy(inEvalThisWeek, inEvalPrevWeek);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Panel de evaluación</h1>
-          <p className="mt-1 text-sm text-slate-600">Resumen de actividad, resultados recientes y tendencias de la semana.</p>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-space-lg">
+      <section className="relative flex flex-col gap-space-md overflow-hidden rounded-xl bg-surface-container p-space-lg shadow-xl lg:flex-row lg:items-center lg:justify-between">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-tertiary/10 blur-2xl" />
+        <div className="relative z-10 flex max-w-2xl flex-col gap-space-2xs">
+          <div className="flex items-center gap-space-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-container/30 px-space-xs py-0.5 font-label-mono text-label-mono-sm text-primary">
+              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-secondary" />
+              TALENT HUB
+            </span>
+            <span className="font-label-mono text-label-mono-sm text-on-surface-variant">| Evaluaciones &amp; vacantes</span>
+          </div>
+          <h1 className="font-headline text-headline-xl font-bold tracking-tight text-on-surface">
+            Panel de Control de Talento &amp; IA
+          </h1>
+          <p className="text-body-md text-on-surface-variant">
+            Resumen de evaluaciones orales, vacantes Talent y predicción de desempeño.
+          </p>
         </div>
-        <Link
-          href="/interviews/new"
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-700"
-        >
-          + Nueva evaluación
-        </Link>
-      </div>
+        <div className="relative z-10 flex flex-wrap items-center gap-space-xs">
+          <Link
+            href="/reports"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-surface-container-high px-space-sm text-body-sm text-on-surface shadow-sm transition-all hover:bg-surface-variant"
+          >
+            Reportes
+          </Link>
+          <Link
+            href="/jobs"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-surface-container-high px-space-sm text-body-sm text-on-surface shadow-sm transition-all hover:bg-surface-variant"
+          >
+            Vacantes
+          </Link>
+          <Link
+            href="/interviews/new"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary-container px-space-md text-body-sm font-semibold text-on-primary-container shadow-md transition-all hover:bg-primary-container/90"
+          >
+            + Nueva evaluación
+          </Link>
+        </div>
+      </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-space-md sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          icon={<ClipboardList className="h-5 w-5 text-blue-600" />}
-          iconBg="bg-blue-50"
+          accent="primary"
+          icon={<ClipboardList className="h-5 w-5" />}
           title="Evaluaciones creadas"
           value={totalInterviews}
           trend={t1}
         />
         <MetricCard
-          icon={<FileText className="h-5 w-5 text-emerald-600" />}
-          iconBg="bg-emerald-50"
+          accent="secondary"
+          icon={<FileText className="h-5 w-5" />}
           title="Finalizadas"
           value={totalCompleted}
           trend={t2}
         />
         <MetricCard
-          icon={<Link2 className="h-5 w-5 text-violet-600" />}
-          iconBg="bg-violet-50"
+          accent="tertiary"
+          icon={<Link2 className="h-5 w-5" />}
           title="Con link / en curso"
           value={linksSentTotal}
           trend={t3}
         />
         <MetricCard
-          icon={<Loader2 className="h-5 w-5 text-amber-600" />}
-          iconBg="bg-amber-50"
+          accent="primary"
+          icon={<Loader2 className="h-5 w-5" />}
           title="En evaluación"
           value={inEvaluation}
           trend={t4}
         />
-      </div>
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-2">
+      <div className="grid gap-space-md lg:grid-cols-3">
+        <div className="rounded-xl bg-surface-container p-space-md shadow-md lg:col-span-2">
           <RecentEvaluationsTable rows={rows} />
         </div>
-        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-          <p className="mb-2 text-sm font-semibold text-slate-900">Score medio</p>
-          {avgScore != null ? <ScoreDonut value={avgScore} /> : <p className="text-slate-500">Sin datos aún</p>}
-          <span className="mt-4 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100">
+        <div className="flex flex-col items-center justify-center rounded-xl bg-surface-container p-space-lg shadow-md">
+          <p className="mb-2 font-headline text-headline-md font-semibold text-on-surface">Score medio</p>
+          {avgScore != null ? <ScoreDonut value={avgScore} /> : <p className="text-on-surface-variant">Sin datos aún</p>}
+          <span className="mt-4 inline-flex rounded-full bg-primary-container/30 px-3 py-1 font-label-mono text-label-mono-sm font-semibold text-primary">
             Nivel más frecuente: {topLevel}
           </span>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-2">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-slate-900">Actividad semanal</h2>
-            <div className="flex flex-wrap gap-4 text-xs font-medium">
-              <span className="flex items-center gap-1.5 text-slate-600">
-                <span className="h-2 w-6 rounded-full bg-blue-600" /> Creadas
+      <div className="grid gap-space-md lg:grid-cols-3">
+        <div className="rounded-xl bg-surface-container p-space-md shadow-md lg:col-span-2">
+          <div className="mb-space-md flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-headline text-headline-md font-semibold text-on-surface">Actividad semanal</h2>
+            <div className="flex flex-wrap gap-4 text-body-sm">
+              <span className="flex items-center gap-1.5 text-on-surface-variant">
+                <span className="h-2 w-6 rounded-full bg-primary" /> Creadas
               </span>
-              <span className="flex items-center gap-1.5 text-slate-600">
-                <span className="h-2 w-6 rounded-full bg-emerald-500" /> Finalizadas
+              <span className="flex items-center gap-1.5 text-on-surface-variant">
+                <span className="h-2 w-6 rounded-full bg-secondary" /> Finalizadas
               </span>
             </div>
           </div>
           <WeeklyActivityChart created={createdSeries} finished={finishedSeries} />
         </div>
-        <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-slate-500" />
-            <h2 className="text-base font-semibold text-slate-900">Distribución por nivel</h2>
+        <div className="rounded-xl bg-surface-container p-space-md shadow-md">
+          <div className="mb-space-md flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-on-surface-variant" />
+            <h2 className="font-headline text-headline-md font-semibold text-on-surface">Distribución por nivel</h2>
           </div>
           <LevelBars distribution={distribution} />
         </div>
@@ -369,31 +396,49 @@ export default async function DashboardPage() {
 }
 
 function MetricCard({
+  accent,
   icon,
-  iconBg,
   title,
   value,
   trend,
 }: {
+  accent: "primary" | "secondary" | "tertiary";
   icon: ReactNode;
-  iconBg: string;
   title: string;
   value: number;
   trend: { text: string; up: boolean | null };
 }) {
+  const bar =
+    accent === "secondary"
+      ? "from-secondary to-secondary-container"
+      : accent === "tertiary"
+        ? "from-tertiary to-tertiary-container"
+        : "from-primary to-primary-container";
+  const iconTone =
+    accent === "secondary"
+      ? "bg-secondary-container/20 text-secondary"
+      : accent === "tertiary"
+        ? "bg-tertiary-container/20 text-tertiary"
+        : "bg-primary-container/20 text-primary";
+
   return (
-    <div className="flex gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>{icon}</span>
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-slate-500">{title}</p>
-        <p className="mt-0.5 text-2xl font-bold tabular-nums text-slate-900">{value}</p>
-        <p
-          className={`mt-1 text-xs font-medium ${
-            trend.up === true ? "text-emerald-600" : trend.up === false ? "text-rose-600" : "text-slate-500"
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container p-space-md shadow-md transition-all hover:bg-surface-container-high">
+      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${bar}`} />
+      <div className="flex items-start justify-between">
+        <span className="font-label-mono text-label-mono-sm uppercase tracking-wider text-on-surface-variant">
+          {title}
+        </span>
+        <div className={`rounded-lg p-1.5 ${iconTone}`}>{icon}</div>
+      </div>
+      <div className="mt-space-sm flex items-baseline justify-between">
+        <span className="font-headline text-stat-metric font-bold tracking-tight text-on-surface">{value}</span>
+        <span
+          className={`inline-flex items-center font-label-mono text-label-mono-sm font-medium ${
+            trend.up === true ? "text-secondary" : trend.up === false ? "text-error" : "text-on-surface-variant"
           }`}
         >
           {trend.text}
-        </p>
+        </span>
       </div>
     </div>
   );

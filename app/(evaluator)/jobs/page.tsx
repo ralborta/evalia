@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireEvaluatorPage } from "@/lib/require-evaluator-page";
 import { Badge } from "@/components/ui/badge";
 import { canWriteOrg } from "@/lib/org-context";
+import { Briefcase } from "lucide-react";
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Borrador",
@@ -24,30 +25,56 @@ export default async function JobsPage() {
     },
   });
 
+  const openCount = jobs.filter((j) => j.status === "OPEN").length;
+  const appsTotal = jobs.reduce((a, j) => a + j._count.applications, 0);
+
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Vacantes</h1>
-          <p className="mt-1 text-sm text-slate-600">Búsquedas de EvalIA Talent, aisladas por organización.</p>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-space-lg">
+      <section className="relative flex flex-col gap-space-md overflow-hidden rounded-xl bg-surface-container p-space-lg shadow-xl lg:flex-row lg:items-center lg:justify-between">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative z-10 max-w-2xl">
+          <span className="font-label-mono text-label-mono-sm uppercase text-primary">Talent · Vacantes</span>
+          <h1 className="mt-space-2xs font-headline text-headline-xl font-bold tracking-tight text-on-surface">
+            Gestión de Vacantes &amp; Búsquedas Activas
+          </h1>
+          <p className="mt-space-2xs text-body-md text-on-surface-variant">
+            Búsquedas de EvalIA Talent, aisladas por organización.
+          </p>
         </div>
         {canWrite ? (
           <Link
             href="/jobs/new"
-            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            className="relative z-10 inline-flex h-9 items-center justify-center rounded-lg bg-primary-container px-space-md text-body-sm font-semibold text-on-primary-container shadow-md hover:bg-primary-container/90"
           >
             Nueva vacante
           </Link>
         ) : null}
-      </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-space-md sm:grid-cols-3">
+        <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+          <span className="font-label-mono text-label-mono-sm uppercase text-on-surface-variant">Vacantes</span>
+          <p className="mt-space-sm font-headline text-stat-metric font-bold text-on-surface">{jobs.length}</p>
+        </div>
+        <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+          <span className="font-label-mono text-label-mono-sm uppercase text-on-surface-variant">Abiertas</span>
+          <p className="mt-space-sm font-headline text-stat-metric font-bold text-secondary">{openCount}</p>
+        </div>
+        <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+          <span className="font-label-mono text-label-mono-sm uppercase text-on-surface-variant">Candidaturas</span>
+          <p className="mt-space-sm font-headline text-stat-metric font-bold text-tertiary">{appsTotal}</p>
+        </div>
+      </section>
+
       {jobs.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-dashed border-outline-variant/50 bg-surface-container p-10 text-center text-body-sm text-on-surface-variant">
+          <Briefcase className="mx-auto mb-3 h-8 w-8 text-outline" />
           Todavía no hay vacantes. Crea la primera para definir scorecard y pipeline.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <div className="overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container shadow-md">
+          <table className="w-full text-left text-body-sm">
+            <thead className="bg-surface-container-lowest font-label-mono text-label-mono-sm uppercase tracking-wide text-on-surface-variant">
               <tr>
                 <th className="px-4 py-3">Vacante</th>
                 <th className="px-4 py-3">Estado</th>
@@ -57,21 +84,22 @@ export default async function JobsPage() {
             </thead>
             <tbody>
               {jobs.map((job) => (
-                <tr key={job.id} className="border-t border-slate-100">
+                <tr key={job.id} className="border-t border-outline-variant/20 hover:bg-surface-container-high/50">
                   <td className="px-4 py-3">
-                    <Link href={`/jobs/${job.id}`} className="font-semibold text-slate-900 hover:text-blue-700">
+                    <Link
+                      href={`/jobs/${job.id}`}
+                      className="font-semibold text-on-surface hover:text-primary"
+                    >
                       {job.title}
                     </Link>
-                    {job.location ? <p className="text-xs text-slate-500">{job.location}</p> : null}
+                    {job.location ? <p className="text-body-sm text-on-surface-variant">{job.location}</p> : null}
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant="secondary">{statusLabel[job.status] ?? job.status}</Badge>
                   </td>
-                  <td className="px-4 py-3 tabular-nums">{job._count.applications}</td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {job.publishedScorecard
-                      ? `Publicado v${job.publishedScorecard.version}`
-                      : "Borrador"}
+                  <td className="px-4 py-3 tabular-nums text-on-surface">{job._count.applications}</td>
+                  <td className="px-4 py-3 text-on-surface-variant">
+                    {job.publishedScorecard ? `Publicado v${job.publishedScorecard.version}` : "Borrador"}
                   </td>
                 </tr>
               ))}

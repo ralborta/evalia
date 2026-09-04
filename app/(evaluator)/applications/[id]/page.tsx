@@ -27,20 +27,23 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const canWrite = canWriteOrg(ctx.memberRole);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <Link href={`/jobs/${application.jobId}`} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-space-md">
+      <Link
+        href={`/jobs/${application.jobId}`}
+        className="text-body-sm font-semibold text-primary hover:text-primary-fixed-dim"
+      >
         ← {application.job.title}
       </Link>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">{application.candidate.name}</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="font-headline text-headline-xl font-bold text-on-surface">{application.candidate.name}</h1>
+        <p className="mt-1 text-body-md text-on-surface-variant">
           {application.candidate.email || "Sin email"} · etapa actual: {application.stage.name}
         </p>
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-900">CV y análisis</h2>
-        <div className="mt-4 space-y-6">
+      <section className="rounded-xl border border-outline-variant/30 bg-surface-container p-5 shadow-md">
+        <h2 className="font-headline text-headline-md font-semibold text-on-surface">CV y análisis</h2>
+        <div className="mt-4 space-y-6 rounded-xl bg-white p-4 text-slate-900 shadow-inner">
           <CvUploadPanel applicationId={application.id} canWrite={canWrite} />
           <div className="border-t border-slate-100 pt-5">
             <CvAnalysisPanel applicationId={application.id} canWrite={canWrite} />
@@ -48,9 +51,9 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-900">Mover de etapa</h2>
-        <div className="mt-3">
+      <section className="rounded-xl border border-outline-variant/30 bg-surface-container p-5 shadow-md">
+        <h2 className="font-headline text-headline-md font-semibold text-on-surface">Mover de etapa</h2>
+        <div className="mt-3 rounded-xl bg-white p-3 text-slate-900">
           <PipelineKanban
             jobId={application.jobId}
             canWrite={canWrite}
@@ -62,32 +65,32 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-900">Historial inmutable</h2>
+      <section className="rounded-xl border border-outline-variant/30 bg-surface-container p-5 shadow-md">
+        <h2 className="font-headline text-headline-md font-semibold text-on-surface">Historial inmutable</h2>
         <ol className="mt-4 space-y-3">
           {application.history.map((item) => (
-            <li key={item.id} className="border-l-2 border-slate-200 pl-4 text-sm">
-              <p className="font-medium text-slate-900">
+            <li key={item.id} className="border-l-2 border-outline-variant/50 pl-4 text-body-sm">
+              <p className="font-medium text-on-surface">
                 {item.fromStage?.name ?? "Inicio"} → {item.toStage.name}
               </p>
-              <p className="text-slate-500">
+              <p className="text-on-surface-variant">
                 {item.actor?.name ?? "Sistema"} · {item.createdAt.toLocaleString("es")}
               </p>
-              {item.note ? <p className="mt-1 text-slate-600">{item.note}</p> : null}
+              {item.note ? <p className="mt-1 text-on-surface-variant">{item.note}</p> : null}
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-900">Scorecard de esta candidatura</h2>
+      <section className="rounded-xl border border-outline-variant/30 bg-surface-container p-5 shadow-md">
+        <h2 className="font-headline text-headline-md font-semibold text-on-surface">Scorecard de esta candidatura</h2>
         {application.scorecard ? (
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-body-sm text-on-surface-variant">
             {application.scorecard.name} · v{application.scorecard.version} ·{" "}
             {application.scorecard.criteria.length} criterios
           </p>
         ) : (
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-body-sm text-on-surface-variant">
             No había scorecard publicado cuando se creó. Los cambios futuros no se aplican hacia atrás.
           </p>
         )}
