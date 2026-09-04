@@ -2,32 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  ClipboardList,
-  PlusCircle,
-  FileBarChart,
-  BookOpen,
-  Users,
-  Settings,
-  Briefcase,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/** Labels e iconos Material del shell Stitch (Talent Hub). */
 const items: {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: string;
   exact?: boolean;
 }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/interviews/new", label: "Nueva evaluación", icon: PlusCircle },
-  { href: "/interviews", label: "Entrevistas", icon: ClipboardList },
-  { href: "/jobs", label: "Vacantes", icon: Briefcase },
-  { href: "/candidates", label: "Candidatos", icon: Users },
-  { href: "/evaluation-profiles", label: "Perfiles", icon: BookOpen },
-  { href: "/reports", label: "Reportes", icon: FileBarChart },
-  { href: "/settings", label: "Configuración", icon: Settings },
+  { href: "/dashboard", label: "Talent Dashboard", icon: "space_dashboard", exact: true },
+  { href: "/interviews", label: "AI Assessments & Interviews", icon: "mic" },
+  { href: "/jobs", label: "Candidate Pipeline", icon: "group" },
+  { href: "/candidates", label: "Candidatos & Scores", icon: "badge" },
+  { href: "/evaluation-profiles", label: "Voice Agents Studio", icon: "graphic_eq" },
+  { href: "/reports", label: "Analytics & Benchmarks", icon: "monitoring" },
+  { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
 function isActive(pathname: string, href: string, exact?: boolean) {
@@ -51,7 +41,7 @@ export function EvaluatorNav({ variant = "sidebar" }: { variant?: "sidebar" | "m
               key={href + label}
               href={href}
               className={cn(
-                "shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all",
+                "shrink-0 rounded-xl px-3 py-1.5 font-body-sm text-body-sm font-semibold transition-all",
                 active
                   ? "bg-primary-container font-bold text-on-primary-container"
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface",
@@ -66,13 +56,14 @@ export function EvaluatorNav({ variant = "sidebar" }: { variant?: "sidebar" | "m
   }
 
   return (
-    <nav className="flex flex-col gap-space-2xs text-body-md">
-      {items.map(({ href, label, icon: Icon, exact }) => {
+    <nav className="flex flex-col gap-space-2xs" data-active-classes="bg-primary-container text-on-primary-container font-bold rounded-xl">
+      {items.map(({ href, label, icon, exact }) => {
         const active = isActive(pathname, href, exact);
         return (
           <Link
             key={href + label}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={cn(
               "flex items-center gap-space-sm rounded-xl px-space-sm py-space-xs transition-all",
               active
@@ -80,8 +71,8 @@ export function EvaluatorNav({ variant = "sidebar" }: { variant?: "sidebar" | "m
                 : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface",
             )}
           >
-            <Icon className="h-5 w-5 shrink-0" />
-            <span>{label}</span>
+            <span className="material-symbols-outlined text-[20px]">{icon}</span>
+            <span className="font-body-md text-body-md">{label}</span>
           </Link>
         );
       })}

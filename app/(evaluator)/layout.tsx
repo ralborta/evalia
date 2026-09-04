@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
-import { Bell, LogOut, Plus, Search } from "lucide-react";
+import { Bell, LogOut, Search } from "lucide-react";
 import { EvaliaLogo } from "@/components/brand/evalia-logo";
 import { EvaluatorNav } from "@/components/app-shell/evaluator-nav";
 import { RefreshOnFocus } from "@/components/evaluator/refresh-on-focus";
@@ -37,17 +37,29 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
       <aside className="fixed left-0 top-0 z-50 hidden h-full w-sidebar-width flex-col justify-between bg-surface-container-low p-space-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] md:flex">
         <div className="flex flex-col gap-space-lg">
           <div className="flex items-center gap-space-sm px-space-xs py-space-2xs">
-            <EvaliaLogo href="/dashboard" height={36} priority onDark />
+            <EvaliaLogo href="/dashboard" height={32} priority onDark />
+            <div className="flex min-w-0 flex-col">
+              <span className="font-headline-md text-headline-md font-bold leading-none tracking-tight text-on-surface">
+                EvalIA
+              </span>
+              <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">
+                Oral AI Engine
+              </span>
+            </div>
           </div>
           <EvaluatorNav />
         </div>
         <div className="flex flex-col gap-space-sm">
           <div className="flex flex-col gap-space-xs rounded-xl bg-surface-container p-space-sm">
             <div className="flex items-center justify-between">
-              <span className="font-label-mono text-label-mono-sm uppercase text-on-surface-variant">Org activa</span>
+              <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">
+                Acoustic Engine
+              </span>
               <span className="h-2 w-2 animate-pulse rounded-full bg-secondary" />
             </div>
-            <p className="truncate font-label-mono text-label-mono-sm text-on-surface-variant">{orgName}</p>
+            <p className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">
+              v4.2-latency &lt;140ms · {orgName}
+            </p>
           </div>
           <form
             action={async () => {
@@ -77,24 +89,26 @@ export default async function EvaluatorLayout({ children }: { children: ReactNod
               <input
                 readOnly
                 tabIndex={-1}
-                placeholder="Buscar candidatos, vacantes, evaluaciones…"
-                className="h-9 w-full rounded-lg bg-surface-container-lowest pl-9 pr-space-md font-body text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Search candidates, oral competencies, roles... (⌘K)"
+                className="h-9 w-full rounded-lg bg-surface-container-lowest pl-9 pr-space-md font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary"
                 aria-label="Buscar"
               />
             </div>
             <div className="hidden items-center gap-space-xs rounded-full bg-secondary-container/20 px-space-sm py-space-2xs text-secondary xl:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
-              <span className="font-label-mono text-label-mono-sm font-medium">Motor IA activo</span>
+              <span className="font-label-mono-sm text-label-mono-sm font-medium">
+                AI Engine v4.2 Active - 99.8% precision
+              </span>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-space-sm md:gap-space-md">
             {activeOrgId ? <OrgSwitcher organizations={orgs} activeOrganizationId={activeOrgId} /> : null}
             <Link
               href="/interviews/new"
-              className="hidden h-9 items-center gap-space-xs rounded-lg bg-primary-container px-space-md text-body-sm font-medium text-on-primary-container shadow-sm transition-colors hover:bg-primary-container/90 sm:inline-flex"
+              className="hidden h-9 items-center gap-space-xs rounded-lg bg-primary-container px-space-md font-body-sm text-body-sm font-medium text-on-primary-container shadow-sm transition-colors hover:bg-primary-container/90 sm:inline-flex"
             >
-              <Plus className="h-[18px] w-[18px]" />
-              Nueva evaluación
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              New AI Assessment
             </Link>
             <Link
               href="/dashboard"

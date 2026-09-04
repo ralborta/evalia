@@ -44,6 +44,12 @@ export default function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+        />
+      </head>
       <body className="min-h-full bg-slate-50 text-slate-900 antialiased selection:bg-primary-container/40 selection:text-on-primary-container">
         <Providers>{children}</Providers>
       </body>
