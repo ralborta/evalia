@@ -36,6 +36,7 @@ export default async function InterviewsListPage() {
     level: i.evaluation?.estimatedLevel ?? null,
     score: i.evaluation?.overallScore ?? null,
     dateIso: i.createdAt.toISOString(),
+    hasAudio: Boolean(i.audioUrl?.trim() || i.elevenlabsConversationId?.trim()),
   }));
 
   return <InterviewsListClient metrics={{ total, completed, linkSent, processing }} rows={rows} />;

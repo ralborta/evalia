@@ -267,7 +267,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
                   Tu navegador no soporta audio embebido.
                 </audio>
                 <a
-                  href={`/api/interviews/${interview.id}/audio`}
+                  href={`/api/interviews/${interview.id}/audio?download=1`}
                   download
                   className="inline-flex w-fit items-center gap-1.5 text-xs font-semibold text-violet-700 underline-offset-2 hover:underline"
                 >

@@ -2,18 +2,23 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Clock,
+  Download,
+  Headphones,
   Link2,
+  Pause,
+  Play,
   Search,
   SlidersHorizontal,
   ArrowDownWideNarrow,
   Send,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +32,7 @@ export type InterviewListRow = {
   level: string | null;
   score: number | null;
   dateIso: string;
+  hasAudio: boolean;
 };
 
 export type InterviewMetrics = {
@@ -128,6 +134,7 @@ export function InterviewsListClient({ metrics, rows }: { metrics: InterviewMetr
   const [sort, setSort] = useState<"recent" | "oldest" | "score">("recent");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [listeningId, setListeningId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let list = [...rows];
@@ -319,22 +326,33 @@ export function InterviewsListClient({ metrics, rows }: { metrics: InterviewMetr
               ) : (
                 pageRows.map((row) => {
                   const av = avatarColors(row.id);
+                  const isListening = listeningId === row.id;
                   return (
                     <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={cn(
-                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                              av.bg,
-                              av.text,
-                            )}
-                          >
-                            {row.initials}
-                          </span>
-                          <span className="font-medium text-slate-900">{row.candidateName}</span>
-                        </div>
+                      <td className="px-5 py-3.5" colSpan={isListening ? 8 : 1}>
+                        {isListening ? (
+                          <InlineAudioPlayer
+                            interviewId={row.id}
+                            candidateName={row.candidateName}
+                            onClose={() => setListeningId(null)}
+                          />
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={cn(
+                                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                                av.bg,
+                                av.text,
+                              )}
+                            >
+                              {row.initials}
+                            </span>
+                            <span className="font-medium text-slate-900">{row.candidateName}</span>
+                          </div>
+                        )}
                       </td>
+                      {!isListening ? (
+                        <>
                       <td className="px-5 py-3.5 text-slate-600">{row.jobTitle}</td>
                       <td className="px-5 py-3.5 text-slate-600">{row.profileName}</td>
                       <td className="px-5 py-3.5">
@@ -352,13 +370,39 @@ export function InterviewsListClient({ metrics, rows }: { metrics: InterviewMetr
                       <td className="px-5 py-3.5 font-medium tabular-nums text-slate-800">{row.score ?? "—"}</td>
                       <td className="px-5 py-3.5 whitespace-nowrap text-slate-600">{formatInterviewDate(row.dateIso)}</td>
                       <td className="px-5 py-3.5 text-right">
-                        <Link
-                          href={`/interviews/${row.id}`}
-                          className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                        >
-                          Ver detalle &gt;
-                        </Link>
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          {row.hasAudio ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setListeningId(row.id)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-violet-100"
+                                title="Escuchar entrevista"
+                              >
+                                <Headphones className="h-3.5 w-3.5" />
+                                Escuchar
+                              </button>
+                              <a
+                                href={`/api/interviews/${row.id}/audio?download=1`}
+                                download
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                                title="Descargar grabación"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                Descargar
+                              </a>
+                            </>
+                          ) : null}
+                          <Link
+                            href={`/interviews/${row.id}`}
+                            className="ml-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                          >
+                            Ver detalle &gt;
+                          </Link>
+                        </div>
                       </td>
+                        </>
+                      ) : null}
                     </tr>
                   );
                 })
@@ -420,6 +464,143 @@ function MetricCell({ icon, label, value }: { icon: ReactNode; label: string; va
         <p className="text-lg font-bold tabular-nums text-slate-900">
           {value} <span className="text-sm font-semibold text-slate-500">{label}</span>
         </p>
+      </div>
+    </div>
+  );
+}
+
+function formatClock(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function InlineAudioPlayer({
+  interviewId,
+  candidateName,
+  onClose,
+}: {
+  interviewId: string;
+  candidateName: string;
+  onClose: () => void;
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const src = `/api/interviews/${interviewId}/audio`;
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onLoaded = () => {
+      setDuration(audio.duration || 0);
+      setLoading(false);
+      void audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    };
+    const onTime = () => setCurrent(audio.currentTime || 0);
+    const onEnded = () => setPlaying(false);
+    const onErr = () => {
+      setLoading(false);
+      setError("No se pudo cargar el audio. Probá de nuevo en unos minutos o abrí el detalle.");
+    };
+
+    audio.addEventListener("loadedmetadata", onLoaded);
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onErr);
+    return () => {
+      audio.pause();
+      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onErr);
+    };
+  }, [src]);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      void audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    } else {
+      audio.pause();
+      setPlaying(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-3">
+      <audio ref={audioRef} src={src} preload="metadata" className="hidden" />
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={loading || Boolean(error)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-sm transition hover:bg-violet-700 disabled:opacity-40"
+          aria-label={playing ? "Pausar" : "Reproducir"}
+        >
+          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-slate-900">
+            Escuchando: {candidateName}
+            {loading ? <span className="ml-2 font-normal text-slate-500">Cargando…</span> : null}
+          </p>
+          {error ? (
+            <p className="mt-1 text-xs text-red-700">{error}</p>
+          ) : (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="w-10 text-right text-[11px] tabular-nums text-slate-500">
+                {formatClock(current)}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={Math.max(duration, 1)}
+                step={0.1}
+                value={Math.min(current, duration || 0)}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  const audio = audioRef.current;
+                  if (audio) audio.currentTime = next;
+                  setCurrent(next);
+                }}
+                className="h-1.5 w-full accent-violet-600"
+                aria-label="Progreso del audio"
+              />
+              <span className="w-10 text-[11px] tabular-nums text-slate-500">
+                {formatClock(duration)}
+              </span>
+            </div>
+          )}
+        </div>
+        <a
+          href={`/api/interviews/${interviewId}/audio?download=1`}
+          download
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Descargar
+        </a>
+        <Link
+          href={`/interviews/${interviewId}`}
+          className="text-xs font-semibold text-blue-600 hover:underline"
+        >
+          Ver detalle
+        </Link>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-slate-800"
+          aria-label="Cerrar reproductor"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );

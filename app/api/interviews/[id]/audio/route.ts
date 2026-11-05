@@ -7,9 +7,18 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+function safeFilename(name: string) {
+  return name
+    .normalize("NFKD")
+    .replace(/[^\w.-]+/g, "_")
+    .replace(/_+/g, "_")
+    .slice(0, 80) || "entrevista";
+}
+
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
   const { id } = await ctx.params;
+  const wantDownload = new URL(req.url).searchParams.get("download") === "1";
   await requireInterviewInOrg(id);
   const interview = await prisma.interview.findFirst({
     where: { id },
@@ -21,6 +30,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   });
   if (!interview) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+  const dispositionName = `${safeFilename(interview.candidate.name)}-entrevista.mp3`;
+  const disposition = wantDownload
+    ? `attachment; filename="${dispositionName}"`
+    : `inline; filename="${dispositionName}"`;
+
   if (interview.audioUrl) {
     try {
       const upstream = await fetch(interview.audioUrl, { cache: "no-store" });
@@ -31,6 +45,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         headers: {
           "Content-Type": upstream.headers.get("content-type") ?? "audio/mpeg",
           "Cache-Control": "private, max-age=0, no-store",
+          "Content-Disposition": disposition,
         },
       });
     } catch (e) {
@@ -51,6 +66,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const headers: Record<string, string> = {
       "Content-Type": audio.contentType,
       "Cache-Control": "private, max-age=0, no-store",
+      "Content-Disposition": disposition,
     };
     if (audio.contentLength) headers["Content-Length"] = audio.contentLength;
     return new NextResponse(audio.body, { headers });
